@@ -3,14 +3,17 @@ using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.UIElements;
+using static UnityEditor.Experimental.GraphView.GraphView;
 
 
 public class FollowCamera : MonoBehaviour
 {
+    private Player _player;
+
     public Transform character; // 타겟(캐릭터)
     public float followSpeed = 50f;
     public float sensitivity = 500f;
-    public float clampAngle = 70f;
+    public float clampAngle = 80f;
 
     private float rotX;
     private float rotY;
@@ -24,6 +27,9 @@ public class FollowCamera : MonoBehaviour
 
     void Start()
     {
+
+        _player = character.GetComponent<Player>();
+
         // offset으로 카메라 최대 거리 설정
         maxDistance = offset.magnitude;
         finalDistance = maxDistance;
@@ -41,15 +47,18 @@ public class FollowCamera : MonoBehaviour
 
     void Update()
     {
-        rotX += -(Input.GetAxis("Mouse Y")) * sensitivity * Time.deltaTime;
-        rotY += Input.GetAxis("Mouse X") * sensitivity * Time.deltaTime;
+        if (!_player.isRunning) // 걷거나 정지할 때만 카메라 조작 가능
+        {
+            rotX += -(Input.GetAxis("Mouse Y")) * sensitivity * Time.deltaTime;
+            rotY += Input.GetAxis("Mouse X") * sensitivity * Time.deltaTime;
 
-        rotX = Mathf.Clamp(rotX, -clampAngle, clampAngle);
+            rotX = Mathf.Clamp(rotX, -clampAngle, clampAngle);
 
-        transform.rotation = Quaternion.Slerp(
-            transform.rotation, 
-            Quaternion.Euler(rotX, rotY, 0), 
-            Time.deltaTime * followSpeed);
+            transform.rotation = Quaternion.Slerp(
+                transform.rotation,
+                Quaternion.Euler(rotX, rotY, 0),
+                Time.deltaTime * followSpeed);
+        }
     }
 
     void LateUpdate()
@@ -62,7 +71,7 @@ public class FollowCamera : MonoBehaviour
         RaycastHit hit;
         Vector3 dirToTarget = targetPosition - character.position;
 
-        if (Physics.Raycast(character.position, dirToTarget.normalized, out hit, maxDistance))
+        if (Physics.Raycast(character.position + Vector3.up * 0.5f, dirToTarget.normalized, out hit, maxDistance))
         {
             finalDistance = Mathf.Clamp(hit.distance, minDistance, maxDistance);
         }
@@ -71,8 +80,10 @@ public class FollowCamera : MonoBehaviour
             finalDistance = maxDistance;
         }
 
-        Vector3 finalPos = character.position + transform.rotation * offset.normalized * finalDistance;
+        // 캐릭터 위치 + (원래 위치 * 오프셋 방향 * 최종 거리)
+        Vector3 finalPos = character.position + (transform.rotation * offset.normalized * finalDistance);
 
+        // 카메라 위치 변경
         transform.position = Vector3.Lerp(transform.position, finalPos, Time.deltaTime * smoothness);
     }
 }

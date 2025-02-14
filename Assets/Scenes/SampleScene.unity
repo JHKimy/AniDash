@@ -344,11 +344,11 @@ Transform:
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
   m_LocalRotation: {x: 0.13315682, y: -0, z: -0, w: 0.991095}
-  m_LocalPosition: {x: 0, y: 1.5, z: -4}
+  m_LocalPosition: {x: 0, y: 1.62, z: -4.54}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 768214633}
   m_LocalEulerAnglesHint: {x: 15.304, y: 0, z: 0}
 --- !u!114 &330585548
 MonoBehaviour:
@@ -411,8 +411,8 @@ MonoBehaviour:
   sensitivity: 500
   clampAngle: 70
   offset: {x: 0, y: 2, z: -7}
-  minDistance: 1
-  maxDistance: 5
+  minDistance: 5
+  maxDistance: 10
   smoothness: 1000
 --- !u!1 &410087039
 GameObject:
@@ -541,56 +541,6 @@ GameObject:
     type: 3}
   m_PrefabInstance: {fileID: 841021478}
   m_PrefabAsset: {fileID: 0}
---- !u!136 &768214629
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 768214626}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.38
-  m_Height: 1.7
-  m_Direction: 1
-  m_Center: {x: 0, y: 0.81, z: -0.09}
---- !u!54 &768214630
-Rigidbody:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 768214626}
-  serializedVersion: 4
-  m_Mass: 1
-  m_Drag: 0
-  m_AngularDrag: 0.05
-  m_CenterOfMass: {x: 0, y: 0, z: 0}
-  m_InertiaTensor: {x: 1, y: 1, z: 1}
-  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ImplicitCom: 1
-  m_ImplicitTensor: 1
-  m_UseGravity: 1
-  m_IsKinematic: 0
-  m_Interpolate: 0
-  m_Constraints: 80
-  m_CollisionDetection: 1
 --- !u!114 &768214631
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -604,6 +554,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   speed: 3
+  runSpeed: 8
+  finalSpeed: 0
+  altCamera: 0
+  smoothness: 50
+  isRunning: 0
 --- !u!95 &768214632
 Animator:
   serializedVersion: 7
@@ -632,6 +587,56 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 841021478}
   m_PrefabAsset: {fileID: 0}
+--- !u!54 &768214634
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 768214626}
+  serializedVersion: 4
+  m_Mass: 1
+  m_Drag: 0
+  m_AngularDrag: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 80
+  m_CollisionDetection: 1
+--- !u!136 &768214635
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 768214626}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.43
+  m_Height: 1.64
+  m_Direction: 1
+  m_Center: {x: 0.27, y: 0.82, z: -0.03}
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
@@ -707,12 +712,12 @@ PrefabInstance:
     - target: {fileID: -8679921383154817045, guid: 238cb973749bc6344aaf41a5b76f14ef,
         type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: 1.68
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 238cb973749bc6344aaf41a5b76f14ef,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0
+      value: 0.708
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 238cb973749bc6344aaf41a5b76f14ef,
         type: 3}
@@ -1048,16 +1053,12 @@ PrefabInstance:
     - {fileID: 5866666021909216657, guid: 238cb973749bc6344aaf41a5b76f14ef, type: 3}
     m_RemovedGameObjects:
     - {fileID: 5721862180412347019, guid: 238cb973749bc6344aaf41a5b76f14ef, type: 3}
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 238cb973749bc6344aaf41a5b76f14ef,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 330585546}
     m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 238cb973749bc6344aaf41a5b76f14ef,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 768214630}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 238cb973749bc6344aaf41a5b76f14ef,
-        type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 768214629}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 238cb973749bc6344aaf41a5b76f14ef,
         type: 3}
       insertIndex: -1
@@ -1066,6 +1067,14 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 768214632}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 238cb973749bc6344aaf41a5b76f14ef,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 768214635}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 238cb973749bc6344aaf41a5b76f14ef,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 768214634}
   m_SourcePrefab: {fileID: 100100000, guid: 238cb973749bc6344aaf41a5b76f14ef, type: 3}
 --- !u!1 &1145483666
 GameObject:
@@ -1207,7 +1216,6 @@ Rigidbody:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 330585546}
   - {fileID: 410087041}
   - {fileID: 832575519}
   - {fileID: 204612943}
