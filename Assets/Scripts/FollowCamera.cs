@@ -2,6 +2,7 @@ using System.Security.Cryptography.X509Certificates;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.HighDefinition;
 using UnityEngine.UIElements;
 using static UnityEditor.Experimental.GraphView.GraphView;
 
@@ -59,31 +60,46 @@ public class FollowCamera : MonoBehaviour
                 Quaternion.Euler(rotX, rotY, 0),
                 Time.deltaTime * followSpeed);
         }
+        else 
+        {
+            transform.position = character.position + offset;
+            transform.LookAt(character.position);
+        }
     }
 
     void LateUpdate()
     {
         if (character == null) return;
 
-        // 카메라 목표 위치 계산 (캐릭터의 위치 + offset)
-        Vector3 targetPosition = character.position + transform.rotation * offset;
-
-        RaycastHit hit;
-        Vector3 dirToTarget = targetPosition - character.position;
-
-        if (Physics.Raycast(character.position + Vector3.up * 0.5f, dirToTarget.normalized, out hit, maxDistance))
+        if (!_player.isRunning)
         {
-            finalDistance = Mathf.Clamp(hit.distance, minDistance, maxDistance);
-        }
-        else
-        {
-            finalDistance = maxDistance;
-        }
 
-        // 캐릭터 위치 + (원래 위치 * 오프셋 방향 * 최종 거리)
-        Vector3 finalPos = character.position + (transform.rotation * offset.normalized * finalDistance);
 
-        // 카메라 위치 변경
-        transform.position = Vector3.Lerp(transform.position, finalPos, Time.deltaTime * smoothness);
+
+
+
+            // 카메라 목표 위치 계산 (캐릭터의 위치 + offset)
+            //Vector3 targetPosition = character.position + transform.rotation * offset;
+            Vector3 targetPosition = character.position + offset;
+
+            RaycastHit hit;
+            Vector3 dirToTarget = targetPosition - character.position;
+
+            if (Physics.Raycast(character.position + Vector3.up * 0.5f, dirToTarget.normalized, out hit, maxDistance))
+            {
+                finalDistance = Mathf.Clamp(hit.distance, minDistance, maxDistance);
+            }
+            else
+            {
+                finalDistance = maxDistance;
+            }
+
+            // 캐릭터 위치 + (원래 위치 * 오프셋 방향 * 최종 거리)
+            Vector3 finalPos = character.position + (transform.rotation * offset.normalized * finalDistance);
+
+            // 카메라 위치 변경
+            transform.position = Vector3.Lerp(transform.position, finalPos, Time.deltaTime * smoothness);
+
+        }
     }
 }

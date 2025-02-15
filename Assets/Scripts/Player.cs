@@ -1,3 +1,4 @@
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -15,7 +16,7 @@ public class Player : MonoBehaviour
     public float smoothness = 50f;
     public bool isRunning;
 
-
+    Vector3 moveDirection = Vector3.zero; // 현재 이동 방향 저장
 
     float hAxis;
     float vAxis;
@@ -73,18 +74,13 @@ public class Player : MonoBehaviour
     {
         if (isRunning)
         {
-            //  이동 방향 계산
-            Vector3 moveDirection = new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical"));
+            float v = Input.GetAxisRaw("Vertical");
+            float h = Input.GetAxisRaw("Horizontal");
 
-            //  이동 입력이 있을 때만 회전 (입력이 없을 때는 회전 유지)
-            if (moveDirection.magnitude > 0.1f)
-            {
-                Vector3 lookAtTarget = transform.position + moveDirection.normalized;
-                Quaternion targetRotation = Quaternion.LookRotation(lookAtTarget - transform.position);
+            Vector3 moveVec = new Vector3(h, 0, v).normalized;
 
-                //  Slerp를 사용해 부드럽게 회전 (갑작스러운 반대 방향 회전 방지)
-                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * smoothness);
-            }
+            transform.LookAt(transform.position + moveVec);
+
         }
 
         // 캐릭터 회전 기본 설정
@@ -93,7 +89,7 @@ public class Player : MonoBehaviour
         {
             // 요소별 곱셈
             Vector3 playerRotate = Vector3.Scale(_camera.transform.forward, new Vector3(1, 0, 1));
-            
+
             // 플레이어가 바라볼 방향으로 천천이 구형보간
             transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(playerRotate), Time.deltaTime * smoothness);
         }   
@@ -103,16 +99,34 @@ public class Player : MonoBehaviour
     {
         finalSpeed = isRunning ? runSpeed : speed;
 
-        Vector3 forward = transform.TransformDirection(Vector3.forward);
-        Vector3 right = transform.TransformDirection(Vector3.right);
-
-        Vector3 moveDirection = forward * Input.GetAxisRaw("Vertical") + right * Input.GetAxisRaw("Horizontal");
 
 
-        
-        
+        if (!isRunning)
+        {
+            // 로컬을 월드 좌표로
+            // 현재 transform 기준으로 앞방향
+            // 캐릭터가 회전하면 보고 있는 부분이 앞방향
+            // 따라서 w하면 무조건 앞
+            Vector3 forward = transform.TransformDirection(Vector3.forward);
+            Vector3 right = transform.TransformDirection(Vector3.right);
+
+            moveDirection = forward * Input.GetAxisRaw("Vertical") + right * Input.GetAxisRaw("Horizontal");
+            transform.position += moveDirection.normalized * finalSpeed * Time.deltaTime;
+
+        }
+        else
+        {
+            // 캐릭터가 회전하든 말든, W/S는 항상 월드 기준 앞뒤, A/D는 항상 좌우 이동
+            Vector3 dir = new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical")).normalized;   
+            transform.LookAt(transform.position + dir);
+            transform.position += dir * finalSpeed * Time.deltaTime;
+
+
+            //moveDirection = forward * Input.GetAxisRaw("Vertical") + right * Input.GetAxisRaw("Horizontal");
+        }
+
+
         // 직접 transform.position을 업데이트하여 이동 처리
-        transform.position += moveDirection.normalized * finalSpeed * Time.deltaTime;
 
 
 
