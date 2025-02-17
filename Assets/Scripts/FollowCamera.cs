@@ -9,97 +9,97 @@ using static UnityEditor.Experimental.GraphView.GraphView;
 
 public class FollowCamera : MonoBehaviour
 {
-    private Player _player;
+    public Transform    characterTransform;    // 캐릭터 움직임
+    private Player      character;             // 캐릭터 객체
 
-    public Transform character; // 타겟(캐릭터)
-    public float followSpeed = 50f;
-    public float sensitivity = 500f;
-    public float clampAngle = 80f;
+    // 카메라 위치 변수
+    public Vector3      offset              = new Vector3(0, 2, -7);
+    private float       minDistance         = 1f;
+    private float       maxDistance         = 5f;
+    private float       finalDistance;
+    private Vector3     finalPos;
 
-    private float rotX;
-    private float rotY;
+    // 카메라 회전 변수
+    private float       yaw                 = 0f;
+    private float       pitch               = 0f;
+    private float       clampAngle          = 80f;
 
-    public Vector3 offset = new Vector3(0, 2, -7); // 캐릭터 뒤쪽 위에 배치할 오프셋
-    public float minDistance = 1f;
-    public float maxDistance = 5f;
-    public float smoothness = 500f;
+    // 달리기 관련 변수
+    Quaternion      runRot;
 
-    private float finalDistance;
+    // 입력 변수
+    public float        mouseSensitivity    = 500f;
 
-    void Start()
-    {
 
-        _player = character.GetComponent<Player>();
 
-        // offset으로 카메라 최대 거리 설정
+    private void Start()
+    {   
+        // 캐릭터 참조
+        character = characterTransform.GetComponent<Player>();
+
+        // 캐릭터와 거리 초기 설정
         maxDistance = offset.magnitude;
         finalDistance = maxDistance;
-
-        // 현재 카메라의 X, Y 회전 각도 가져오기
-        Vector3 initialRotation = transform.rotation.eulerAngles;
-        rotX = initialRotation.x > 180f ? initialRotation.x - 360f : initialRotation.x;
-        rotY = initialRotation.y;
 
         // 마우스 커서 잠금
         UnityEngine.Cursor.lockState = CursorLockMode.Locked;
         UnityEngine.Cursor.visible = false;
     }
 
-
     void Update()
     {
-        if (!_player.isRunning) // 걷거나 정지할 때만 카메라 조작 가능
-        {
-            rotX += -(Input.GetAxis("Mouse Y")) * sensitivity * Time.deltaTime;
-            rotY += Input.GetAxis("Mouse X") * sensitivity * Time.deltaTime;
-
-            rotX = Mathf.Clamp(rotX, -clampAngle, clampAngle);
-
-            transform.rotation = Quaternion.Slerp(
-                transform.rotation,
-                Quaternion.Euler(rotX, rotY, 0),
-                Time.deltaTime * followSpeed);
-        }
-        else 
-        {
-            transform.position = character.position + offset;
-            transform.LookAt(character.position);
-        }
+        Rotation();
     }
 
     void LateUpdate()
     {
-        if (character == null) return;
+        Move();
+    }
 
-        if (!_player.isRunning)
+    void Rotation()
+    {
+        // 마우스 입력 가져오기
+        yaw     -= Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime; // 위아래 
+        pitch   += Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime; // 좌우
+
+        yaw     = Mathf.Clamp(yaw, -clampAngle, clampAngle);
+
+        transform.rotation = Quaternion.Slerp(
+            transform.rotation,
+            Quaternion.Euler(yaw, pitch, 0),
+            Time.deltaTime * 50f);
+    }
+
+    void Move()
+    {
+        // 레이캐스팅
+        RaycastHit hit;
+        Vector3 dirToTarget = (characterTransform.position + transform.rotation * offset) - (characterTransform.position + Vector3.up * 0.5f);
+
+        if (Physics.Raycast(characterTransform.position + Vector3.up * 0.5f, dirToTarget.normalized, out hit, maxDistance))
         {
+            finalDistance = Mathf.Clamp(hit.distance, minDistance, maxDistance);
+        }
+        else
+        {
+            finalDistance = maxDistance;
+        }
 
 
-
-
-
-            // 카메라 목표 위치 계산 (캐릭터의 위치 + offset)
-            //Vector3 targetPosition = character.position + transform.rotation * offset;
-            Vector3 targetPosition = character.position + offset;
-
-            RaycastHit hit;
-            Vector3 dirToTarget = targetPosition - character.position;
-
-            if (Physics.Raycast(character.position + Vector3.up * 0.5f, dirToTarget.normalized, out hit, maxDistance))
-            {
-                finalDistance = Mathf.Clamp(hit.distance, minDistance, maxDistance);
-            }
-            else
-            {
-                finalDistance = maxDistance;
-            }
-
-            // 캐릭터 위치 + (원래 위치 * 오프셋 방향 * 최종 거리)
-            Vector3 finalPos = character.position + (transform.rotation * offset.normalized * finalDistance);
-
-            // 카메라 위치 변경
-            transform.position = Vector3.Lerp(transform.position, finalPos, Time.deltaTime * smoothness);
+        if (character.GetIsRunning())
+        {
+            finalPos = characterTransform.position + (runRot * offset.normalized * finalDistance);
+        }
+        else
+        {
+            // 캐릭터 위치 + (원래 회전값 * 오프셋 방향 * 최종 거리)
+            // 회전 행렬 * 스칼라 -> 회전한 값
+            finalPos = characterTransform.position + (transform.rotation * offset.normalized * finalDistance);
+            runRot = transform.rotation;
 
         }
+        // 카메라 위치 변경
+        transform.position = Vector3.Lerp(transform.position, finalPos, Time.deltaTime * 500f);
     }
+
 }
