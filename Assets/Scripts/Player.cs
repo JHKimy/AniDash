@@ -1,3 +1,4 @@
+using System.Collections;
 using TMPro;
 using TreeEditor;
 using Unity.VisualScripting;
@@ -31,13 +32,13 @@ public class Player : MonoBehaviour
 
     private bool isRunning;
     private bool altCamera;
-    
+
 
     // 오브젝트 상호작용
     private GameObject grabbedObject = null;
     public Transform grabPostion; // 박스를 들 위치
     public float grabRange = 2f;
-    public float throwForce = 10f;
+    public float throwForce = 30f;
 
     // 벽타기
     public float climbSpeed = 3f;
@@ -48,6 +49,10 @@ public class Player : MonoBehaviour
     private bool isWallDetected = false;
     private Vector3 wallNormal;
 
+    // 파쿠르
+    private bool canParkour;
+    private bool isParkouring;
+    Vector3 parkourPosition;
 
     public bool GetIsRunning() { return isRunning; }
 
@@ -82,6 +87,8 @@ public class Player : MonoBehaviour
         Slide();
         DetectPickupObject(); // 감지 기능 실행
         WallCheck(); // 벽 감지
+        CheckForParkour();
+        TryParkour();
 
         // W를 누르고 있는 동안만 벽타기 실행
         if (isWallDetected)
@@ -107,6 +114,92 @@ public class Player : MonoBehaviour
 
         SetAnimation();
     }
+
+
+    void CheckForParkour()
+    {
+        RaycastHit hit;
+        Vector3 origin = transform.position + Vector3.up * 1f;
+        Vector3 direction = transform.forward;
+
+        if (Physics.Raycast(origin, direction, out hit, 1f))
+        {
+            if (hit.collider.CompareTag("Wall"))
+            {
+                float objectTopY = hit.collider.bounds.max.y; // 장애물의 최상단 높이
+                float height = objectTopY - transform.position.y;
+
+                Debug.Log("aaaaaaaadfs");
+                Debug.Log(objectTopY);
+                Debug.Log(height);
+
+
+                if (height > 0.5f && height < 3f)
+                {
+                    canParkour = true;
+                    Vector3 parkourOffset = transform.forward * 0.02f; // 플레이어가 보고 있는 방향으로 1m 이동
+                    parkourPosition = new Vector3(hit.point.x + parkourOffset.x, objectTopY + 0.3f, hit.point.z + parkourOffset.z);
+                }
+                else
+                {
+                    canParkour = false;
+                }
+            }
+        }
+        else
+        {
+            canParkour = false;
+        }
+    }
+
+    void TryParkour()
+    {
+        if (canParkour && Input.GetKeyDown(KeyCode.O))
+        {
+            // _animator.applyRootMotion = true; // 애니메이션이 캐릭터를 이동시키지 않도록 막음
+
+            _animator.CrossFade("Parkour", 0.2f);
+            // _animator.applyRootMotion = true;
+            StartCoroutine(ParkourMove());
+            // _animator.applyRootMotion = false;
+        }
+    }
+    IEnumerator ParkourMove()
+    {
+        isParkouring = true;
+        _rigidbody.useGravity = false;
+
+        Vector3 startPos = transform.position;
+        Vector3 endPos = parkourPosition;
+
+        // AnimatorStateInfo animState = _animator.GetCurrentAnimatorStateInfo(0);
+        // float animLength = animState.length; // 애니메이션 길이 (초 단위)
+
+
+        float t = 0;
+        while (t < 1f)
+        {
+            t += Time.deltaTime * 3; // 속도 조절
+            transform.position = Vector3.Lerp(startPos, endPos, t);
+            yield return null;
+        }
+
+        // yield return new WaitForSeconds(animLength);
+
+
+        _rigidbody.useGravity = true;
+        isParkouring = false;
+    }
+
+
+
+
+
+
+
+
+
+
 
 
     void WallCheck()
@@ -181,7 +274,7 @@ public class Player : MonoBehaviour
 
     void Move()
     {
-        if (isClimbing) return;
+        if (isClimbing || isParkouring) return;
 
         finalSpeed = isRunning ? runSpeed : speed;
 
@@ -227,7 +320,7 @@ public class Player : MonoBehaviour
 
     void SetAnimation()
     {
-        if (!isClimbing)
+        if (!isClimbing || !isParkouring)
         {
             _animator.SetFloat("vInput", vAxis);
             _animator.SetFloat("hInput", hAxis);
@@ -285,10 +378,10 @@ public class Player : MonoBehaviour
 
     void DetectPickupObject()
     {
-        if(grabbedObject == null)
+        if (grabbedObject == null)
         {
             RaycastHit hit;
-            if(Physics.Raycast(transform.position, transform.forward, out hit, grabRange))
+            if (Physics.Raycast(transform.position, transform.forward, out hit, grabRange))
             {
                 if (hit.collider.CompareTag("Box"))
                 {
