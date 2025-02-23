@@ -54,6 +54,9 @@ public class Player : MonoBehaviour
     private bool isParkouring;
     Vector3 parkourPosition;
 
+
+    public float knockbackForce = 10f; // 충돌 시 오브젝트에 적용할 넉백 효과
+
     public bool GetIsRunning() { return isRunning; }
 
     //================================================
@@ -124,7 +127,7 @@ public class Player : MonoBehaviour
 
         if (Physics.Raycast(origin, direction, out hit, 1f))
         {
-            if (hit.collider.CompareTag("Wall"))
+            if (hit.collider.CompareTag("Floor"))
             {
                 float objectTopY = hit.collider.bounds.max.y; // 장애물의 최상단 높이
                 float height = objectTopY - transform.position.y;
@@ -235,8 +238,16 @@ public class Player : MonoBehaviour
 
     void ClimbWall()
     {
-        _rigidbody.linearVelocity = new Vector3(0, vAxis * climbSpeed, 0);
+        // 벽의 노말값을 기준으로 좌우 이동 축 계산
+        Vector3 wallTangent = Vector3.Cross(wallNormal, Vector3.up).normalized;
+        // 벽에 평행한 업벡터
+        Vector3 wallUp = Vector3.Cross(wallTangent, wallNormal).normalized;
+
+        Vector3 desiredMovement = (wallUp * vAxis + wallTangent * hAxis) * climbSpeed;
+
+        _rigidbody.linearVelocity = desiredMovement;
     }
+
 
     void JumpOffWall()
     {
@@ -346,7 +357,7 @@ public class Player : MonoBehaviour
     {
         if (slideKey && !isSlide && isMoving)
         {
-            speed *= 4;
+            speed *= 5;
             _animator.SetTrigger("doSlide");
             isSlide = true;
 
@@ -356,19 +367,29 @@ public class Player : MonoBehaviour
             //    transform.forward = moveDirection;
             //}
 
-            Invoke("SlideOut", 0.7f);
+            Invoke("SlideOut", 0.5f);
         }
     }
 
     void SlideOut()
     {
-        speed *= 0.25f;
+        speed *= 0.2f;
         isSlide = false;
 
     }
 
     void OnCollisionEnter(Collision collision)
     {
+        // Interaction 태그를 가진 오브젝트와 슬라이딩 중일 때
+        if (collision.gameObject.CompareTag("Interaction") && isSlide)
+        {
+            Rigidbody rb = collision.gameObject.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                // 플레이어가 바라보는 방향(슬라이딩 방향)으로 힘을 가함
+                rb.AddForce(transform.forward * knockbackForce, ForceMode.Impulse);
+            }
+        }
         if (collision.gameObject.tag == "Floor")
         {
             _animator.SetBool("isJump", false);
