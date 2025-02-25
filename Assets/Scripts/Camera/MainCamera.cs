@@ -7,10 +7,10 @@ using UnityEngine.UIElements;
 using static UnityEditor.Experimental.GraphView.GraphView;
 
 
-public class FollowCamera : MonoBehaviour
+public class MainCamera: MonoBehaviour
 {
-    public Transform    characterTransform;    // 캐릭터 움직임
-    private Player      character;             // 캐릭터 객체
+    public Transform    _characterTransform;    // 캐릭터 움직임
+    private Player      _character;             // 캐릭터 객체
 
     // 카메라 위치 변수
     public Vector3      offset              = new Vector3(0, 2, -7);
@@ -35,7 +35,7 @@ public class FollowCamera : MonoBehaviour
     private void Start()
     {   
         // 캐릭터 참조
-        character = characterTransform.GetComponent<Player>();
+        _character = _characterTransform.GetComponent<Player>();
 
         // 캐릭터와 거리 초기 설정
         maxDistance = offset.magnitude;
@@ -74,9 +74,9 @@ public class FollowCamera : MonoBehaviour
     {
         // 레이캐스팅
         RaycastHit hit;
-        Vector3 dirToTarget = (characterTransform.position + transform.rotation * offset) - (characterTransform.position + Vector3.up * 0.5f);
+        Vector3 dirToTarget = (_characterTransform.position + transform.rotation * offset) - (_characterTransform.position + Vector3.up * 0.5f);
 
-        if (Physics.Raycast(characterTransform.position + Vector3.up * 0.5f, dirToTarget.normalized, out hit, maxDistance))
+        if (Physics.Raycast(_characterTransform.position + Vector3.up * 0.5f, dirToTarget.normalized, out hit, maxDistance))
         {
             finalDistance = Mathf.Clamp(hit.distance, minDistance, maxDistance);
         }
@@ -86,15 +86,15 @@ public class FollowCamera : MonoBehaviour
         }
 
 
-        if (character.GetIsRunning())
+        if (_character.GetIsRunning())
         {
-            finalPos = characterTransform.position + (runRot * offset.normalized * finalDistance);
+            finalPos = _characterTransform.position + (runRot * offset.normalized * finalDistance);
         }
         else
         {
             // 캐릭터 위치 + (원래 회전값 * 오프셋 방향 * 최종 거리)
             // 회전 행렬 * 스칼라 -> 회전한 값
-            finalPos = characterTransform.position + (transform.rotation * offset.normalized * finalDistance);
+            finalPos = _characterTransform.position + (transform.rotation * offset.normalized * finalDistance);
             runRot = transform.rotation;
 
         }

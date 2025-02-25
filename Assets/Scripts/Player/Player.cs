@@ -38,7 +38,7 @@ public class Player : MonoBehaviour
     private GameObject grabbedObject = null;
     public Transform grabPostion; // 박스를 들 위치
     public float grabRange = 2f;
-    public float throwForce = 30f;
+    public float throwForce = 100f;
 
     // 벽타기
     public float climbSpeed = 3f;
@@ -53,6 +53,13 @@ public class Player : MonoBehaviour
     private bool canParkour;
     private bool isParkouring;
     Vector3 parkourPosition;
+
+
+
+    public LineRenderer trajectoryLine; // 유도선을 표시할 LineRenderer
+    public int trajectorySegmentCount = 100; // 궤적 점의 개수
+    public float trajectoryTimeStep = 5f; // 각 점 간 시간 간격
+
 
 
     public float knockbackForce = 10f; // 충돌 시 오브젝트에 적용할 넉백 효과
@@ -93,29 +100,36 @@ public class Player : MonoBehaviour
         CheckForParkour();
         TryParkour();
 
-        // W를 누르고 있는 동안만 벽타기 실행
+        // 벽타기 관련 처리...
         if (isWallDetected)
         {
-            if (!isClimbing) // 처음 W를 눌렀을 때만 벽타기 시작
+            if (!isClimbing)
             {
                 StartWallClimb();
             }
-            ClimbWall(); // 계속 W를 누르고 있어야만 벽을 오름
+            ClimbWall();
         }
-        if (isClimbing && isJump) // W를 떼면 벽타기 종료
+        if (isClimbing && isJump)
         {
             EndWallClimb();
         }
-
-        // 점프하면 벽타기 종료
         if (isClimbing && Input.GetKeyDown(KeyCode.Space))
         {
             JumpOffWall();
         }
 
         Debug.DrawRay(transform.position, transform.forward * grabRange, Color.red);
-
         SetAnimation();
+
+        // 박스를 들고 있을 때 유도선을 갱신
+        if (grabbedObject != null)
+        {
+            DrawTrajectory();
+        }
+        else if (trajectoryLine != null)
+        {
+            trajectoryLine.enabled = false;
+        }
     }
 
 
@@ -270,7 +284,7 @@ public class Player : MonoBehaviour
 
     void Rotate()
     {
-        if (altCamera) return; // 슬라이딩 중엔 회전 방지
+        if (isRunning || isSlide || altCamera) return; // 슬라이딩 중엔 회전 방지
 
         // 기본 회전
         Vector3 playerRotate = (isRunning || isSlide) ? transform.forward : _camera.transform.forward;
@@ -335,7 +349,7 @@ public class Player : MonoBehaviour
         {
             _animator.SetFloat("vInput", vAxis);
             _animator.SetFloat("hInput", hAxis);
-            _animator.SetBool("isRun", isRunning && isMoving);
+            _animator.SetBool("isRunning", isRunning & isMoving);
         }
         _animator.SetBool("isClimbing", isClimbing);
         _animator.SetFloat("climbInput", vAxis);
@@ -395,6 +409,22 @@ public class Player : MonoBehaviour
             _animator.SetBool("isJump", false);
             isJump = false;
         }
+        if (grabbedObject == null)
+        {
+            if (collision.gameObject.CompareTag("Box"))
+            {
+                GrabObject(collision.collider.gameObject);
+            }
+        }
+        else
+        {
+            if (Input.GetKeyDown(KeyCode.E)) // 다시 E키를 누르면 던짐
+            {
+                ThrowObject();
+            }
+        }
+
+
     }
 
     void DetectPickupObject()
@@ -444,17 +474,54 @@ public class Player : MonoBehaviour
     {
         if (grabbedObject != null)
         {
-            Rigidbody _rigidbody = grabbedObject.GetComponent<Rigidbody>();
+            Rigidbody rb = grabbedObject.GetComponent<Rigidbody>();
 
             grabbedObject.transform.SetParent(null); // 부모 해제
-            _rigidbody.isKinematic = false; // 물리 적용
-            _rigidbody.AddForce(transform.forward * throwForce, ForceMode.Impulse); // 앞으로 던지기
+            rb.isKinematic = false; // 물리 적용
 
-            grabbedObject = null; // 손에서 놓기
+            Vector3 throwDirection = (transform.forward + _camera.transform.up).normalized;
+            rb.AddForce(throwDirection * throwForce, ForceMode.Impulse);
 
-            // 던진 후에는 상체 애니메이션 비활성화g
-            _animator.SetLayerWeight(1, 0); // Uppe_rigidbodyody 레이어 가중치 0으로 설정
+            grabbedObject = null; // 집은 상태 해제
+
+            _animator.SetLayerWeight(1, 0);
         }
+    }
+
+    void DrawTrajectory()
+    {
+        if (grabbedObject == null)
+        {
+            trajectoryLine.enabled = false;
+            return;
+        }
+
+        trajectoryLine.enabled = true;
+
+        // 시작 위치 : 박스를 잡고 있는 위치 (손 위치)
+        Vector3 startPos = grabPostion.position;
+
+        // 던지는 방향 계산 (던지기 전과 동일한 방식)
+        Vector3 throwDirection = (transform.forward + _camera.transform.up).normalized;
+
+        // Rigidbody의 질량을 고려한 초기 속도
+        Rigidbody rb = grabbedObject.GetComponent<Rigidbody>();
+        float mass = rb != null ? rb.mass : 1f;
+        Vector3 initialVelocity = throwDirection * (throwForce / mass);
+
+        // Inspector에서 조절한 값 사용 (예: trajectorySegmentCount = 10, trajectoryTimeStep = 2f)
+        Vector3[] trajectoryPoints = new Vector3[trajectorySegmentCount];
+
+        for (int i = 0; i < trajectorySegmentCount; i++)
+        {
+            float t = i * trajectoryTimeStep;
+            // 포물선 궤적 공식: startPos + initialVelocity * t + 0.5 * Physics.gravity * t^2
+            Vector3 point = startPos + initialVelocity * t + 0.5f * Physics.gravity * t * t;
+            trajectoryPoints[i] = point;
+        }
+
+        trajectoryLine.positionCount = trajectorySegmentCount;
+        trajectoryLine.SetPositions(trajectoryPoints);
     }
 
 }
