@@ -2,80 +2,174 @@ using UnityEngine;
 
 public class PlayerState : MonoBehaviour
 {
-    // ============================================
-    // Ű
-    // ============================================
-    public float vAxis { get; private set; }
-    public float hAxis { get; private set; }
-    public bool keyJump { get; private set; }
-    public bool keySlide { get; private set; }
-    public bool keyAltCamera { get; private set; }
+    public Transform target;
+    private Rigidbody _rigidbody;
+    private Animator _animator;
+
+    private Vector3 previousPosition;
+    public float speed;
+
+    // private float groundCheckDistance = 1.1f;  // 바닥 감지 거리
+    public bool isGrounded = true;  // 현재 바닥에 있는지 여부
 
     // ============================================
-    // ����
+    // 키
     // ============================================
-    public bool     isMoving        { get; private set; }
-    public bool     isRunning       { get; private set; }
-    public bool     isJumping       { get; private set; }
-    public bool     isSliding       { get; private set; }
-    public bool     isClimbing      { get; private set; }
-    public bool     isFalling       { get; private set; }
-    public bool     isAccelFalling  { get; private set; }
-    public bool     isFallingImpact { get; private set; }
-    public bool     isParkouring    { get; private set; }
+    public float vAxis /* W S */           { get; private set; }
+    public float hAxis /* A D */           { get; private set; }
+    public bool keyJump /* Space Bar */    { get; private set; }
+    public bool keySlide /* C */            { get;  set; }
+    public bool keyAltCamera /* Alt */      { get; private set; }
+    public bool keyGrab /* Mouse Left */    { get; private set; }
 
+    // ============================================
+    // 상태
+    // ============================================
 
-    public void SetState(string stateName, bool value)
+    public enum State   // 메인 상태
     {
-        if (stateName == "isFalling" && isParkouring) return; // ������ ���̸� ���� ���� X
+        Idle,
+        Walking,
+        Running,
+        Jumping,
+        Sliding,
+        Falling,
+        AccelFalling,
+        FallingImpact,
+        Parkouring,
+        Climbing
+    }
+    public enum SecondaryState // 보조 상태
+    {
+        None,
+        HoldingObject
+    }
+
+    public State currentState { get; private set; } = State.Idle;
+    public SecondaryState secondaryState { get; private set; } = SecondaryState.None;
+
+    public void SetState(State newState)
+    {
+        // if (currentState == State.Parkouring && newState == State.Falling) return;
+        // if (currentState == State.Climbing && newState == State.Jumping) return;
+
+        currentState = newState;
+    }
+    public void SetSecondaryState(SecondaryState newState)
+    {
+        secondaryState = newState;
+    }
 
 
-        switch (stateName)
+
+    void Start()
+    {
+        _rigidbody = target.GetComponent<Rigidbody>();
+        _animator = GetComponent<Animator>();
+        previousPosition = transform.position;
+
+    }
+
+    void FixedUpdate()
+    {
+        // 속도 계산
+        speed = (transform.position - previousPosition).magnitude / Time.fixedDeltaTime;
+        previousPosition = transform.position;
+
+        // 기본 State를 Idle로 하기 떄문에 까다롭게 설정
+        // 대부분 State에서 돌아오는 것을 Idle로 설정
+        if (speed <= 0.5f && vAxis == 0 && hAxis == 0 &&
+           currentState != State.Jumping && isGrounded 
+           && currentState !=State.Climbing
+           && currentState != State.AccelFalling
+           && currentState != State.FallingImpact)
         {
-            case "isMoving":
-                isMoving = value;
-                break;
-            case "isRunning":
-                isRunning = value;
-                break;
-            case "isJumping":
-                isJumping = value;
-                break;
-            case "isSliding":
-                isSliding = value;
-                break;
-            case "isClimbing":
-                isClimbing = value;
-                break;
-            case "isFalling":
-                isFalling = value;
-                break;
-            case "isAccelFalling":
-                isAccelFalling = value;
-                break;
-            case "isFallingImpact":
-                isFallingImpact = value;
-                break;
-            case "isParkouring":
-                isParkouring = value;
-                break;
-            default:
-                break;
+            speed = 0;
+            SetState(State.Idle);
+            _rigidbody.linearVelocity = Vector3.zero;
         }
+
+        // Debug.Log($"[FixedUpdate] 현재 속도: {speed:F2} m/s");
+        Debug.Log(currentState);
     }
 
     void Update()
     {
+        SetInput();
+        SetAnimation();
+    }
+
+
+    public bool CanMove() =>
+        currentState != State.Parkouring
+        && currentState != State.Climbing
+        && currentState != State.Falling
+        && currentState != State.AccelFalling;
+
+    public bool CanJump()
+        => currentState != State.Jumping &&
+        currentState != State.Parkouring &&
+        currentState != State.Climbing && 
+        currentState != State.Falling;
+
+    public bool CanSlide()
+        => currentState != State.Parkouring
+        && currentState != State.Climbing
+        && currentState != State.Idle;
+
+    public bool CanFall()
+    => currentState != State.Parkouring
+    && currentState != State.Climbing
+        && currentState != State.Sliding;
+
+    public bool IsHoldingObject() 
+        => secondaryState == SecondaryState.HoldingObject;
+
+
+    void OnCollisionEnter(Collision collision)
+    {
+        isGrounded = true;
+    }
+
+    void SetInput()
+    {
+        // 키입력 받기
         vAxis = Input.GetAxis("Vertical");
         hAxis = Input.GetAxis("Horizontal");
-        isMoving = Mathf.Abs(hAxis) > 0.1f || Mathf.Abs(vAxis) > 0.1f;
-        isRunning = Input.GetButton("Run");
         keyJump = Input.GetButtonDown("Jump");
         keySlide = Input.GetButton("Slide");
         keyAltCamera = Input.GetKey(KeyCode.LeftAlt);
+
+        if (Input.GetButton("Run") && isGrounded && currentState == State.Walking)
+        {
+            SetState(State.Running);
+        }
+        else if (!Input.GetButton("Run") && currentState == State.Running)
+        {
+            SetState(State.Walking);
+        }
     }
 
+    void SetAnimation()
+    {
+        _animator.SetFloat("vInput", vAxis);
+        _animator.SetFloat("hInput", hAxis);
+        _animator.SetBool("isJumping", currentState == PlayerState.State.Jumping);
+        _animator.SetBool("isSliding", currentState == PlayerState.State.Sliding);
+        _animator.SetBool("isRunning", currentState == PlayerState.State.Running);
+        _animator.SetBool("isClimbing", currentState == PlayerState.State.Climbing);
+        if (currentState == State.Climbing)
+        {
+            _animator.SetFloat("climbInput", vAxis);
+        }
+        _animator.SetBool("isFalling", currentState == State.Falling);
+        _animator.SetBool("isAccelFalling", currentState == State.AccelFalling);
+
+        //_animator.SetBool("isHoldingObject", _playerState.IsHoldingObject());
+        //_animator.SetFloat("vInput",         _playerState.vAxis);
+        //_animator.SetFloat("hInput",         _playerState.hAxis);
+        //_animator.SetBool("isRunning",       _playerState.isRunning && _playerState.isMoving);
+        //_animator.SetBool("isJumping",       _playerState.isJumping);
+        _animator.SetBool("isFallingImpact",  currentState == State.FallingImpact);
+    }
 }
-
-
-

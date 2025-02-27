@@ -10,7 +10,8 @@ using static UnityEditor.Experimental.GraphView.GraphView;
 public class MainCamera: MonoBehaviour
 {
     public Transform    _characterTransform;    // 캐릭터 움직임
-    private Player      _character;             // 캐릭터 객체
+    private PlayerState _playerState;
+    // private Player      _character;             // 캐릭터 객체
 
     // 카메라 위치 변수
     public Vector3      offset              = new Vector3(0, 2, -7);
@@ -30,13 +31,15 @@ public class MainCamera: MonoBehaviour
     // 입력 변수
     public float        mouseSensitivity    = 500f;
 
+    //private bool        isHoldingRunRot     = false; // 달리기 후 원래 방향으로 돌아가는지 여부
 
-
+     
     private void Start()
-    {   
+    {
         // 캐릭터 참조
-        _character = _characterTransform.GetComponent<Player>();
-
+        // _character = _characterTransform.GetComponent<Player>();
+        _playerState = GetComponent<PlayerState>();
+        
         // 캐릭터와 거리 초기 설정
         maxDistance = offset.magnitude;
         finalDistance = maxDistance;
@@ -86,14 +89,16 @@ public class MainCamera: MonoBehaviour
         }
 
 
-        if (_character.GetIsRunning())
+        if (_playerState.currentState == PlayerState.State.Running
+            || _playerState.currentState == PlayerState.State.Sliding)
         {
             finalPos = _characterTransform.position + (runRot * offset.normalized * finalDistance);
+            // isHoldingRunRot = true;
         }
-        else
+        else 
         {
-            // 캐릭터 위치 + (원래 회전값 * 오프셋 방향 * 최종 거리)
-            // 회전 행렬 * 스칼라 -> 회전한 값
+            // 캐릭터 위치 +(원래 회전값* 오프셋 방향* 최종 거리)
+            // 회전 행렬 *스칼라->회전한 값
             finalPos = _characterTransform.position + (transform.rotation * offset.normalized * finalDistance);
             runRot = transform.rotation;
 
