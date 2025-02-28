@@ -49,7 +49,7 @@ public class PlayerParkour : MonoBehaviour
                 {
                     canParkour = true;
                     Vector3 parkourOffset = transform.forward * 0.03f; // 플레이어가 보고 있는 방향으로 1m 이동
-                    parkourPosition = new Vector3(hit.point.x + parkourOffset.x, objectTopY + 0.3f, hit.point.z + parkourOffset.z);
+                    parkourPosition = new Vector3(hit.point.x + parkourOffset.x, objectTopY + 0.2f, hit.point.z + parkourOffset.z);
                 }
                 else
                 {
@@ -65,12 +65,15 @@ public class PlayerParkour : MonoBehaviour
 
     void TryParkour()
     {
-        if (canParkour && Input.GetKeyDown(KeyCode.O))
+        if (canParkour && Input.GetKeyDown(KeyCode.Space))
         {
             // _animator.applyRootMotion = true; // 애니메이션이 캐릭터를 이동시키지 않도록 막음
 
             _animator.CrossFade("Parkour", 0.2f);
             // _animator.applyRootMotion = true;
+
+            _rigidbody.linearVelocity = Vector3.zero;
+
             StartCoroutine(ParkourMove());
             // _animator.applyRootMotion = false;
         }
@@ -104,8 +107,14 @@ public class PlayerParkour : MonoBehaviour
 
 
         // _playerState.SetState("isParkouring", false);
+        // _playerState.SetState(PlayerState.State.Idle);
+
+
+    }
+
+    // 애니메이션 이벤트로 호출할 함수
+    public void OnParkourEnd()
+    {
         _playerState.SetState(PlayerState.State.Idle);
-
-
     }
 }

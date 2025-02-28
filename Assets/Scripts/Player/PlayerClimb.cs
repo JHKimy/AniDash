@@ -11,6 +11,7 @@ public class PlayerClimb : MonoBehaviour
 
     public float climbSpeed = 3f;
     public float jumpOffForce = 5f;
+    public float wallSnapDistance = 0.1f; // 벽에 밀착할 거리
 
     // 더블클릭 관련 변수
     private float lastWPressTime = -1f;
@@ -42,11 +43,18 @@ public class PlayerClimb : MonoBehaviour
 
         if (_playerState.currentState == PlayerState.State.Climbing)
         {
-            ClimbWall();  // 벽 타기 실행
-
-            if (_playerState.keyJump)  // 점프 키 입력 확인
+            if (!isWallDetected)
             {
-                JumpOffWall();
+                EndWallClimb();
+            }
+            else
+            {
+                ClimbWall();  // 벽 타기 실행
+                // StickToWall();
+                if (_playerState.keyJump)  // 점프 키 입력 확인
+                {
+                    JumpOffWall();
+                }
             }
         }
     }
@@ -57,7 +65,7 @@ public class PlayerClimb : MonoBehaviour
         Vector3 origin = transform.position + Vector3.up * 1.5f;
         Vector3 direction = transform.forward;
 
-        if (Physics.Raycast(origin, direction, out hit, 1f))  // 벽 감지 시
+        if (Physics.Raycast(origin, direction, out hit, 2f))  // 벽 감지 시
         {
             isWallDetected = true;
             wallNormal = hit.normal;
@@ -84,7 +92,11 @@ public class PlayerClimb : MonoBehaviour
         Vector3 desiredMovement = (wallUp * _playerState.vAxis + wallTangent * _playerState.hAxis) * climbSpeed;
         _rigidbody.linearVelocity = desiredMovement;
     }
-
+    void StickToWall()
+    {
+        Vector3 wallPosition = transform.position - wallNormal * wallSnapDistance;
+        transform.position = Vector3.Lerp(transform.position, wallPosition, Time.deltaTime * 10f);
+    }
     void JumpOffWall()
     {
         _playerState.SetState(PlayerState.State.Falling);
@@ -94,7 +106,7 @@ public class PlayerClimb : MonoBehaviour
 
     void EndWallClimb()
     {
-        _playerState.SetState(PlayerState.State.Falling);
+        _playerState.SetState(PlayerState.State.Idle);
         _rigidbody.useGravity = true;
     }
 }

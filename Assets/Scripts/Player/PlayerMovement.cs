@@ -26,9 +26,9 @@ public class PlayerMovement : MonoBehaviour
     public float jumpForce = 7f;
 
     // 슬라이딩
-    private float slideSpeed = 20f;
+    private float slideSpeed = 15f;
     public float knockbackForce = 30f;
-    private float slideCooldown = 1f;
+    private float slideCooldown = 2f;
     private float lastSlideTime = -1f; // 마지막 슬라이드 실행 시간 (초기값을 음수로 설정해 첫 실행 허용)
 
     // 추락 관련 변수
@@ -179,7 +179,7 @@ public class PlayerMovement : MonoBehaviour
             // 0.2초 후 슬라이드 속도 증가
             //Invoke("IncreaseSlideSpeed", 0.2f);
 
-            Invoke("SlideOut", 0.3f);
+            Invoke("SlideOut", 0.25f);
             // _playerState.SetState("isSliding", true);
         }
     }
@@ -205,7 +205,7 @@ public class PlayerMovement : MonoBehaviour
         _rigidbody.linearVelocity = Vector3.zero;
 
         // 슬라이드 후 다시 걷기(Walking) 상태로 변경
-        _playerState.speed = 0;
+        // _playerState.speed = 0;
         // _playerState.SetState(PlayerState.State.Idle);
     }
 
@@ -270,9 +270,9 @@ public class PlayerMovement : MonoBehaviour
         bool wasGrounded = isGrounded;  // 이전 프레임의 지면 상태 저장
         isGrounded = Physics.Raycast(rayStart, Vector3.down, groundCheckDistance);
 
-        Debug.DrawRay(rayStart, Vector3.down * groundCheckDistance, Color.red, 0.1f);
+        // Debug.DrawRay(rayStart, Vector3.down * groundCheckDistance, Color.red, 0.1f);
 
-        Debug.Log("Ground : " + isGrounded);
+        // Debug.Log("Ground : " + isGrounded);
 
 
 

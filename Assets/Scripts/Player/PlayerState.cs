@@ -18,7 +18,7 @@ public class PlayerState : MonoBehaviour
     public float vAxis /* W S */           { get; private set; }
     public float hAxis /* A D */           { get; private set; }
     public bool keyJump /* Space Bar */    { get; private set; }
-    public bool keySlide /* C */            { get;  set; }
+    public bool keySlide /* C */            { get; set; }
     public bool keyAltCamera /* Alt */      { get; private set; }
     public bool keyGrab /* Mouse Left */    { get; private set; }
 
@@ -79,8 +79,8 @@ public class PlayerState : MonoBehaviour
         // 기본 State를 Idle로 하기 떄문에 까다롭게 설정
         // 대부분 State에서 돌아오는 것을 Idle로 설정
         if (speed <= 0.5f && vAxis == 0 && hAxis == 0 &&
-           currentState != State.Jumping && isGrounded 
-           && currentState !=State.Climbing
+           currentState != State.Jumping && isGrounded
+           && currentState != State.Climbing
            && currentState != State.AccelFalling
            && currentState != State.FallingImpact)
         {
@@ -91,6 +91,7 @@ public class PlayerState : MonoBehaviour
 
         // Debug.Log($"[FixedUpdate] 현재 속도: {speed:F2} m/s");
         Debug.Log(currentState);
+        Debug.Log(secondaryState);
     }
 
     void Update()
@@ -109,20 +110,26 @@ public class PlayerState : MonoBehaviour
     public bool CanJump()
         => currentState != State.Jumping &&
         currentState != State.Parkouring &&
-        currentState != State.Climbing && 
+        currentState != State.Climbing &&
         currentState != State.Falling;
 
     public bool CanSlide()
         => currentState != State.Parkouring
         && currentState != State.Climbing
-        && currentState != State.Idle;
+        && currentState != State.Idle
+        && (vAxis != 0 || hAxis != 0);
 
     public bool CanFall()
     => currentState != State.Parkouring
     && currentState != State.Climbing
         && currentState != State.Sliding;
 
-    public bool IsHoldingObject() 
+    public bool CanGrab()
+    => currentState != State.Parkouring
+    && currentState != State.Climbing
+    && currentState != State.Sliding;
+
+    public bool IsHoldingObject()
         => secondaryState == SecondaryState.HoldingObject;
 
 
@@ -140,7 +147,7 @@ public class PlayerState : MonoBehaviour
         keySlide = Input.GetButton("Slide");
         keyAltCamera = Input.GetKey(KeyCode.LeftAlt);
 
-        if (Input.GetButton("Run") && isGrounded && currentState == State.Walking)
+        if (Input.GetButton("Run") && isGrounded && currentState == State.Walking && secondaryState != SecondaryState.HoldingObject)
         {
             SetState(State.Running);
         }
@@ -170,6 +177,15 @@ public class PlayerState : MonoBehaviour
         //_animator.SetFloat("hInput",         _playerState.hAxis);
         //_animator.SetBool("isRunning",       _playerState.isRunning && _playerState.isMoving);
         //_animator.SetBool("isJumping",       _playerState.isJumping);
-        _animator.SetBool("isFallingImpact",  currentState == State.FallingImpact);
+        _animator.SetBool("isFallingImpact", currentState == State.FallingImpact);
+
+        if (secondaryState == SecondaryState.HoldingObject)
+        {
+            _animator.SetLayerWeight(1, 1); // Uppe_rigidbodyody 레이어 가중치 1로 설정
+        }
+        if (secondaryState == SecondaryState.None)
+        {
+            _animator.SetLayerWeight(1, 0); // Uppe_rigidbodyody 레이어 가중치 1로 설정
+        }
     }
 }
