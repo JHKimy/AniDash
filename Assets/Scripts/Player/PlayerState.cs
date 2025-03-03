@@ -1,3 +1,4 @@
+using System.Security.Cryptography.X509Certificates;
 using UnityEngine;
 
 public class PlayerState : MonoBehaviour
@@ -11,6 +12,20 @@ public class PlayerState : MonoBehaviour
 
     // private float groundCheckDistance = 1.1f;  // 바닥 감지 거리
     public bool isGrounded = true;  // 현재 바닥에 있는지 여부
+
+
+
+
+    public float health = 30;
+    public float maxHealth = 100;
+    public float stamina = 30;
+    public float maxStamina = 100;
+
+    public float key = 99;
+
+
+
+
 
     // ============================================
     // 키
