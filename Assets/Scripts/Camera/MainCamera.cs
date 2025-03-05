@@ -10,7 +10,7 @@ using static UnityEditor.Experimental.GraphView.GraphView;
 public class MainCamera: MonoBehaviour
 {
     public Transform    _characterTransform;    // 캐릭터 움직임
-    private PlayerState _playerState;
+    public PlayerState _playerState;
     // private Player      _character;             // 캐릭터 객체
 
     // 카메라 위치 변수
@@ -38,7 +38,7 @@ public class MainCamera: MonoBehaviour
     {
         // 캐릭터 참조
         // _character = _characterTransform.GetComponent<Player>();
-        _playerState = GetComponent<PlayerState>();
+        // _playerState = GetComponent<PlayerState>();
         
         // 캐릭터와 거리 초기 설정
         maxDistance = offset.magnitude;
