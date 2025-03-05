@@ -2,6 +2,15 @@ using System.Security.Cryptography.X509Certificates;
 using UnityEngine;
 
 
+public interface IState
+{
+    void Enter();    // 상태 진입 시 호출
+    void Update();   // 매 프레임 호출
+    void Exit();     // 상태 종료 시 호출
+}
+
+
+
 
 public class PlayerState : MonoBehaviour
 {
@@ -14,6 +23,7 @@ public class PlayerState : MonoBehaviour
 
     // private float groundCheckDistance = 1.1f;  // 바닥 감지 거리
     public bool isGrounded = true;  // 현재 바닥에 있는지 여부
+
 
 
 
