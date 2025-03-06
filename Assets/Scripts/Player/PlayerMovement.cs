@@ -40,6 +40,7 @@ public class PlayerMovement : MonoBehaviour
     private float accelFallThreshold = 3.5f;  // 3초 이상 떨어졌을 때 isAccelFalling 활성화ㄴ
 
 
+
     void Start()
     {
         // 현재 오브젝트에 있는 컴포넌트 참조

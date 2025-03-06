@@ -28,9 +28,9 @@ public class PlayerState : MonoBehaviour
 
 
 
-    public float health = 30;
+    public float health = 100;
     public float maxHealth = 100;
-    public float stamina = 30;
+    public float stamina = 100;
     public float maxStamina = 100;
 
     public float key = 99;
@@ -215,4 +215,16 @@ public class PlayerState : MonoBehaviour
             _animator.SetLayerWeight(1, 0); // Uppe_rigidbodyody 레이어 가중치 1로 설정
         }
     }
+
+
+    public void TakeDamage(int damage)
+    {
+        health -= damage;
+        Debug.Log($"플레이어가 {damage}의 피해를 입음. 현재 체력: {health}");
+
+        if (health <= 0)
+        {
+        }
+    }
+
 }
