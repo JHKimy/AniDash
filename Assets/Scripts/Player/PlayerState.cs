@@ -103,6 +103,30 @@ public class PlayerState : MonoBehaviour
         speed = (transform.position - previousPosition).magnitude / Time.fixedDeltaTime;
         previousPosition = transform.position;
 
+
+
+        // 스태미나 감소 처리
+        if (currentState == State.Running)
+        {
+            stamina -= 10f * Time.fixedDeltaTime;  // 초당 10 감소 (원하는 값으로 조정 가능)
+            stamina = Mathf.Max(0, stamina);  // 스태미나가 0 이하로 내려가지 않도록 방지
+
+            //// 스태미나가 0이 되면 달리기 불가능하게 설정
+            //if (stamina <= 0)
+            //{
+            //    SetState(State.Walking); // 다시 걷는 상태로 변경
+            //}
+        }
+        else if (currentState == State.Walking && isGrounded)
+        {
+            // 걷거나 멈춰있을 때 스태미나 회복
+            stamina += 5f * Time.fixedDeltaTime;  // 초당 5 회복 (원하는 값으로 조정 가능)
+            stamina = Mathf.Min(maxStamina, stamina);  // 최대 스태미나를 초과하지 않도록 방지
+        }
+
+
+
+
         // 기본 State를 Idle로 하기 떄문에 까다롭게 설정
         // 대부분 State에서 돌아오는 것을 Idle로 설정
         if (speed <= 0.5f && vAxis == 0 && hAxis == 0 &&
@@ -117,8 +141,8 @@ public class PlayerState : MonoBehaviour
         }
 
         // Debug.Log($"[FixedUpdate] 현재 속도: {speed:F2} m/s");
-        Debug.Log(currentState);
-        Debug.Log(secondaryState);
+        // Debug.Log(currentState);
+        // Debug.Log(secondaryState);
     }
 
     void Update()
@@ -174,11 +198,14 @@ public class PlayerState : MonoBehaviour
         keySlide = Input.GetButton("Slide");
         keyAltCamera = Input.GetKey(KeyCode.LeftAlt);
 
-        if (Input.GetButton("Run") && isGrounded && currentState == State.Walking && secondaryState != SecondaryState.HoldingObject)
-        {
+        if (Input.GetButton("Run") && isGrounded &&
+            currentState == State.Walking
+            && secondaryState != SecondaryState.HoldingObject &&
+            stamina > 0) 
+        {   
             SetState(State.Running);
         }
-        else if (!Input.GetButton("Run") && currentState == State.Running)
+        else if ((!Input.GetButton("Run") || stamina <= 0) && currentState == State.Running)
         {
             SetState(State.Walking);
         }
@@ -220,7 +247,7 @@ public class PlayerState : MonoBehaviour
     public void TakeDamage(int damage)
     {
         health -= damage;
-        Debug.Log($"플레이어가 {damage}의 피해를 입음. 현재 체력: {health}");
+        // Debug.Log($"플레이어가 {damage}의 피해를 입음. 현재 체력: {health}");
 
         if (health <= 0)
         {

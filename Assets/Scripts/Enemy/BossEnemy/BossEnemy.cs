@@ -1,36 +1,34 @@
-using Gamekit3D;
-using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
+using System.Collections;
 
 public class BossEnemy : MonoBehaviour
 {
-    Rigidbody       _rigidbody;
-    BoxCollider     _boxCollider;
-    MeshRenderer    _meshRenderer;
-    NavMeshAgent    _navMeshAgent;
-    Animator        _animator;
+    private Rigidbody _rigidbody;
+    private NavMeshAgent _navMeshAgent;
+    private Animator _animator;
 
-    public Transform        _target; // 추적할 대상
-    public PlayerState     _playerState;
-
+    public Transform _target; // 플레이어 타겟
+    public PlayerState _playerState;
 
     public GameObject missilePrefab;  // 미사일 프리팹
-    public MeteorStorm meteorStorm; // 메테오 스톰 매니저
+    public MeteorStorm meteorStorm;   // 메테오 스톰 매니저
+    public Transform firePoint;       // 미사일 발사 위치
 
-    public Transform firePoint;  // 미사일 발사 위치
-    public float attackRange = 5f;  // 펀치 공격 범위
-    public float missileRange = 15f;  // 미사일 공격 범위
-    public float attackCooldown = 3f; // 공격 쿨타임
-    public float chaseRange = 30f;  // 추적 범위
+    private float attackCooldown = 3f;   // 공격 쿨타임
+    private float punchAttackRange = 5f; // 펀치 공격 범위
+    private float missileRange = 15f;    // 미사일 공격 범위
+    private float chaseRange = 30f;      // 추적 범위
 
-    private bool canAttack = true;
-
-    public float health = 100f; // 보스 체력
+    private float health = 30f;
     private float maxHealth = 100f;
+    private bool canAttack = true;
+    private bool canUseMeteor = true;  // 메테오 사용 가능 여부
 
-    private bool isChasing = false;
-    private bool isAttacking = false;
+    private float distanceToPlayer;
+    private Vector3 lookVec;
+
+    private bool isLook = true;
 
     public enum State
     {
@@ -40,23 +38,11 @@ public class BossEnemy : MonoBehaviour
         Attack_Missile,
         Attack_Meteor,
         Hit,
-        Falling
+        KnockDown
     }
 
     public State currentState = State.Idle;
 
-    private Vector3 lookVec;
-
-    private float distance;
-
-    public bool isChase;
-    public bool isAttack;
-    public bool isFallling;
-
-
-
-    private bool isLook;
-    
     private void Awake()
     {
         _rigidbody = GetComponent<Rigidbody>();
@@ -66,157 +52,179 @@ public class BossEnemy : MonoBehaviour
 
     void Start()
     {
-        isLook = true;
+        StartCoroutine(Think()); // 일정 시간마다 행동 결정
+        StartCoroutine(AutoMeteorStorm()); // 10초마다 메테오 실행
     }
 
     void Update()
     {
-        Debug.Log("Boss : " + currentState);
-        if(isLook)
+        distanceToPlayer = Vector3.Distance(transform.position, _playerState.transform.position);
+
+        if (isLook)
         {
-            float h = _playerState.hAxis;
-            float v = _playerState.vAxis;
-            lookVec = new Vector3(h, 0, v) * 1f;
+            lookVec = new Vector3(_playerState.hAxis, 0, _playerState.vAxis) * 1f;
             transform.LookAt(_target.position + lookVec);
         }
 
-        float distanceToPlayer = Vector3.Distance(transform.position, _playerState.transform.position);
-
-        if (canAttack && !isAttacking)
+        switch (currentState)
         {
-            if (health <= maxHealth * 0.5f)  // 체력이 50% 이하일 때 메테오 스톰 사용
+            case State.Idle:
+                Idle();
+                break;
+            case State.Chase:
+                Chase();
+                break;
+            case State.Attack_Punch:
+            case State.Attack_Missile:
+            case State.Attack_Meteor:
+                break; // 코루틴에서 처리
+            case State.Hit:
+                break;
+            case State.KnockDown:
+                break;
+        }
+
+        SetAnimation();
+    }
+
+    IEnumerator Think()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(0.5f);
+
+            if (currentState == State.Idle || currentState == State.Chase)
             {
-                StartCoroutine(MeteorStormAttack());
-            }
-            else if (distanceToPlayer > attackRange && distanceToPlayer <= missileRange) // 미사일 공격
-            {
-                StartCoroutine(LaunchMissile());
-            }
-            else if (distanceToPlayer <= attackRange) // 펀치 공격
-            {
-                StartCoroutine(PunchAttack());
+                DecideNextAction();
             }
         }
-        if (!isAttacking)
+    }
+
+    void DecideNextAction()
+    {
+        if (distanceToPlayer > punchAttackRange && distanceToPlayer <= missileRange && canAttack) // 미사일 공격
         {
-            if (distanceToPlayer <= chaseRange)
-            {
-                currentState = State.Chase;
-                Chase();
-            }
-            else
-            {
-                currentState = State.Idle;
-                StopMoving();
-            }
+            StartCoroutine(LaunchMissile());
+        }
+        else if (distanceToPlayer <= punchAttackRange && canAttack) // 펀치 공격
+        {
+            StartCoroutine(PunchAttack());
+        }
+        else if (distanceToPlayer <= chaseRange) // 추적
+        {
+            currentState = State.Chase;
+        }
+    }
+
+    void Idle()
+    {
+        _navMeshAgent.isStopped = true;
+
+        if (distanceToPlayer <= chaseRange)
+        {
+            currentState = State.Chase;
         }
     }
 
     void Chase()
     {
-        if (_navMeshAgent.isActiveAndEnabled && !isAttacking)
+        if (!_navMeshAgent.isActiveAndEnabled)
         {
-            currentState = State.Chase;
-            _navMeshAgent.isStopped = false; // 이동 가능
-            _navMeshAgent.SetDestination(_playerState.transform.position);
-            isChasing = true;
-            _animator.SetBool("isWalk", true); // 이동 애니메이션 실행
+            currentState = State.Idle;
+            return;
         }
 
+        _navMeshAgent.isStopped = false;
+        _navMeshAgent.SetDestination(_playerState.transform.position);
+
+        if (distanceToPlayer <= punchAttackRange) // 공격 가능하면 공격
+        {
+            StartCoroutine(PunchAttack());
+        }
     }
 
-   
-    void StopMoving()
+    // 펀치 공격
+    IEnumerator PunchAttack()
     {
-        currentState = State.Idle;
+        canAttack = false;
+        currentState = State.Attack_Punch;
         _navMeshAgent.isStopped = true;
-        isChasing = false;
-        _animator.SetBool("isWalk", false);
+        _animator.SetTrigger("doAttack");
+
+        yield return new WaitForSeconds(0.5f);
+
+        if (Vector3.Distance(transform.position, _playerState.transform.position) <= punchAttackRange)
+        {
+            _playerState.TakeDamage(15);
+        }
+
+        yield return new WaitForSeconds(attackCooldown);
+        canAttack = true;
+        currentState = State.Idle;
     }
 
     // 미사일 공격
     IEnumerator LaunchMissile()
     {
-        isAttacking = true;
-
         canAttack = false;
-        _navMeshAgent.isStopped = true;
         currentState = State.Attack_Missile;
+        _navMeshAgent.isStopped = true;
         _animator.SetTrigger("doMissile");
 
-        // 미사일 생성
+        yield return new WaitForSeconds(2f);
+
         GameObject missile = Instantiate(missilePrefab, firePoint.position, firePoint.rotation);
         Rigidbody missileRb = missile.GetComponent<Rigidbody>();
 
         if (missileRb != null)
         {
             Vector3 direction = (_playerState.transform.position - firePoint.position).normalized;
-            missileRb.linearVelocity = direction * 10f;  // 미사일 속도 설정
+            missileRb.linearVelocity = direction * 10f;
         }
 
         yield return new WaitForSeconds(attackCooldown);
         canAttack = true;
-        isAttacking = false;
-
+        currentState = State.Idle;
     }
 
-    // 펀치 공격
-    IEnumerator PunchAttack()
+    // 메테오 스톰 공격 (다른 공격과 독립적으로 실행됨)
+    IEnumerator AutoMeteorStorm()
     {
-        isAttacking = true;
-
-        canAttack = false;
-        currentState = State.Attack_Punch;
-        _animator.SetTrigger("doAttack");
-
-        yield return new WaitForSeconds(0.5f);  // 공격 모션 시간 대기
-
-        float distanceToPlayer = Vector3.Distance(transform.position, _playerState.transform.position);
-        if (distanceToPlayer <= attackRange)  // 다시 거리 확인 후 맞으면 데미지 주기
+        while (true)
         {
-            _playerState.TakeDamage(15); // 펀치 데미지
+            yield return new WaitForSeconds(10f); // 10초마다 실행
+
+            if (health <= maxHealth * 0.5f && canUseMeteor)
+            {
+                StartCoroutine(MeteorStormAttack());
+            }
         }
-
-        yield return new WaitForSeconds(attackCooldown);
-        canAttack = true;
-        isAttacking = false;
-
     }
 
-    // 메테오 스톰 공격
     IEnumerator MeteorStormAttack()
     {
-        isAttacking = true;
-
-        canAttack = false;
-        _navMeshAgent.isStopped = true;
+        canUseMeteor = false;  // 연속 사용 방지
         currentState = State.Attack_Meteor;
+        _navMeshAgent.isStopped = true;
         _animator.SetTrigger("doMeteorStorm");
 
-        yield return new WaitForSeconds(1f);  // 메테오 시전 대기
+        yield return new WaitForSeconds(1f);
 
         if (meteorStorm != null)
         {
-            meteorStorm.StartStorm(); // 메테오 스톰 시작
+            meteorStorm.StartStorm();
         }
 
-        yield return new WaitForSeconds(5f); // 메테오 스톰 지속 시간
-        meteorStorm.StopStorm(); // 메테오 스톰 종료
+        yield return new WaitForSeconds(3f);
+        meteorStorm.StopStorm();
 
-        yield return new WaitForSeconds(attackCooldown);
-        canAttack = true; 
-        isAttacking = false;
-
+        yield return new WaitForSeconds(5f); // 5초 후 다시 사용 가능
+        canUseMeteor = true;
+        // currentState = State.Idle;
     }
-    //IEnumerator Think()
-    //{
-    //    yield return new WaitForSeconds(0.1f);
 
-    //    int ranAction = Random.Range(0, 5);
-    //    switch (ranAction)
-    //    {
-
-
-    //    }
-    //}
+    void SetAnimation()
+    {
+        _animator.SetBool("isWalk", currentState == State.Chase);
+    }
 }
