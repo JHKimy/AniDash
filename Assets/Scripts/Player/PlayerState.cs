@@ -187,6 +187,11 @@ public class PlayerState : MonoBehaviour
     void OnCollisionEnter(Collision collision)
     {
         isGrounded = true;
+
+        if (collision.gameObject.tag == "Key") // 수정된 부분
+        {
+            key++;
+        }
     }
 
     void SetInput()
