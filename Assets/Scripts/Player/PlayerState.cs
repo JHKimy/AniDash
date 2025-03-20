@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
 using UnityEngine;
 
@@ -33,7 +34,56 @@ public class PlayerState : MonoBehaviour
     public float stamina = 100;
     public float maxStamina = 100;
 
-    public float key = 99;
+    public int key = 99;
+
+    // ==============================================================================
+    // 옵저버의 주체 
+    // ==============================================================================
+    public interface PlayerObserver
+    {
+        void OnPlayerStateChanged(PlayerState playerState);
+    }
+
+    private List<PlayerObserver> observers = new List<PlayerObserver>();
+
+    public void AttachObserver(PlayerObserver observer)
+    {
+        observers.Add(observer);
+    }
+
+    public void DetachObserver(PlayerObserver observer)
+    {
+        observers.Remove(observer);
+    }
+
+    public void NotifyObservers()
+    {
+        foreach (var observer in observers)
+        {
+            observer.OnPlayerStateChanged(this);
+        }
+    }
+
+    public void SetHealth(float value)
+    {
+        health = Mathf.Clamp(value, 0, maxHealth);
+        NotifyObservers();  // 상태 변경 알림
+    }
+
+    public void SetStamina(float value)
+    {
+        stamina = Mathf.Clamp(value, 0, maxStamina);
+        NotifyObservers();
+    }
+
+    public void SetKey(int value)
+    {
+        key = value;
+        NotifyObservers();
+    }
+    // ==============================================================================
+
+
 
 
 
@@ -105,25 +155,6 @@ public class PlayerState : MonoBehaviour
 
 
 
-        // 스태미나 감소 처리
-        if (currentState == State.Running)
-        {
-            stamina -= 10f * Time.fixedDeltaTime;  // 초당 10 감소 (원하는 값으로 조정 가능)
-            stamina = Mathf.Max(0, stamina);  // 스태미나가 0 이하로 내려가지 않도록 방지
-
-            //// 스태미나가 0이 되면 달리기 불가능하게 설정
-            //if (stamina <= 0)
-            //{
-            //    SetState(State.Walking); // 다시 걷는 상태로 변경
-            //}
-        }
-        else if (currentState == State.Walking && isGrounded)
-        {
-            // 걷거나 멈춰있을 때 스태미나 회복
-            stamina += 5f * Time.fixedDeltaTime;  // 초당 5 회복 (원하는 값으로 조정 가능)
-            stamina = Mathf.Min(maxStamina, stamina);  // 최대 스태미나를 초과하지 않도록 방지
-        }
-
 
 
 
@@ -149,6 +180,17 @@ public class PlayerState : MonoBehaviour
     {
         SetInput();
         SetAnimation();
+
+        // 스태미나 감소 처리
+        if (currentState == State.Running)
+        {
+            SetStamina(stamina - 10f * Time.deltaTime);
+        }
+        else if ( currentState == State.Idle || currentState == State.Walking
+            /*&& isGrounded*/)
+        {
+            SetStamina(stamina + 5f * Time.deltaTime);
+        }
     }
 
 
@@ -188,10 +230,10 @@ public class PlayerState : MonoBehaviour
     {
         isGrounded = true;
 
-        if (collision.gameObject.tag == "Key") // 수정된 부분
-        {
-            key++;
-        }
+        //if (collision.gameObject.tag == "Key") // 수정된 부분
+        //{
+        //    key++;
+        //}
     }
 
     void SetInput()
@@ -252,11 +294,11 @@ public class PlayerState : MonoBehaviour
     public void TakeDamage(int damage)
     {
         health -= damage;
-        // Debug.Log($"플레이어가 {damage}의 피해를 입음. 현재 체력: {health}");
-
-        if (health <= 0)
-        {
-        }
+        SetHealth(health);
+        
+        //if (health <= 0)
+        //{
+        //}
     }
 
 }

@@ -3,6 +3,9 @@ using System.Collections;
 
 public class MeteorStorm : MonoBehaviour
 {
+    public ObjectPool missilePool; // 미사일 풀 사용
+
+
     public GameObject missilePrefab; //  미사일 프리팹
     public float spawnRadius = 20f;  //  생성 반경
     public float minSpawnInterval = 0.5f; //  최소 생성 간격
@@ -18,6 +21,7 @@ public class MeteorStorm : MonoBehaviour
     void Start()
     {
         // StartCoroutine(SpawnMeteorStorm());
+        
     }
     IEnumerator SpawnMeteorStorm()
     {
@@ -47,8 +51,22 @@ public class MeteorStorm : MonoBehaviour
             Random.Range(-spawnRadius, spawnRadius) // Z축 랜덤
         );
 
+
+
+        //  오브젝트 풀에서 미사일 가져오기
+        GameObject missileObj = missilePool.GetObject(spawnPosition, Quaternion.identity);
+
+        //  미사일 초기화
+        GreatMissile greatMissile = missileObj.GetComponent<GreatMissile>();
+        if (greatMissile != null)
+        {
+            greatMissile.Initialize(missilePool);
+        }
+
+
+
         //  미사일 생성
-        Instantiate(missilePrefab, spawnPosition, Quaternion.identity);
+        // Instantiate(missilePrefab, spawnPosition, Quaternion.identity);
     }
     //  폭격 시작 / 중지 기능 추가
     public void StartStorm() => StartCoroutine(SpawnMeteorStorm());

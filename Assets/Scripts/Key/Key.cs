@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Playables;
 
 public class Key : MonoBehaviour
 {
@@ -28,7 +29,11 @@ public class Key : MonoBehaviour
 
         if (collision.gameObject.tag == "Player") // 수정된 부분
         {
+            PlayerState playerState = collision.gameObject.GetComponent<PlayerState>();
+
             Destroy(gameObject);
+            playerState.SetKey(playerState.key + 1);  // 키 개수 증가
+
         }
     }
 }

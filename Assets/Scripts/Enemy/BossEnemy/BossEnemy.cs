@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.AI;
 using System.Collections;
+using UnityEngine.Playables;
 
 public class BossEnemy : MonoBehaviour
 {
@@ -52,7 +53,6 @@ public class BossEnemy : MonoBehaviour
 
     void Start()
     {
-        StartCoroutine(Think()); // 일정 시간마다 행동 결정
         StartCoroutine(AutoMeteorStorm()); // 10초마다 메테오 실행
     }
 
@@ -66,6 +66,8 @@ public class BossEnemy : MonoBehaviour
             transform.LookAt(_target.position + lookVec);
         }
 
+        StartCoroutine(Think()); // 일정 시간마다 행동 결정
+
         switch (currentState)
         {
             case State.Idle:
@@ -75,7 +77,9 @@ public class BossEnemy : MonoBehaviour
                 Chase();
                 break;
             case State.Attack_Punch:
+                break;
             case State.Attack_Missile:
+                break;
             case State.Attack_Meteor:
                 break; // 코루틴에서 처리
             case State.Hit:
@@ -105,10 +109,12 @@ public class BossEnemy : MonoBehaviour
         if (distanceToPlayer > punchAttackRange && distanceToPlayer <= missileRange && canAttack) // 미사일 공격
         {
             StartCoroutine(LaunchMissile());
+
         }
         else if (distanceToPlayer <= punchAttackRange && canAttack) // 펀치 공격
         {
             StartCoroutine(PunchAttack());
+
         }
         else if (distanceToPlayer <= chaseRange) // 추적
         {
@@ -119,6 +125,8 @@ public class BossEnemy : MonoBehaviour
     void Idle()
     {
         _navMeshAgent.isStopped = true;
+        _rigidbody.linearVelocity = Vector3.zero;
+
 
         if (distanceToPlayer <= chaseRange)
         {
@@ -150,8 +158,9 @@ public class BossEnemy : MonoBehaviour
         currentState = State.Attack_Punch;
         _navMeshAgent.isStopped = true;
         _animator.SetTrigger("doAttack");
+        _rigidbody.linearVelocity = Vector3.zero;
 
-        yield return new WaitForSeconds(0.5f);
+        yield return new WaitForSeconds(1f);
 
         if (Vector3.Distance(transform.position, _playerState.transform.position) <= punchAttackRange)
         {
@@ -170,8 +179,9 @@ public class BossEnemy : MonoBehaviour
         currentState = State.Attack_Missile;
         _navMeshAgent.isStopped = true;
         _animator.SetTrigger("doMissile");
+        _rigidbody.linearVelocity = Vector3.zero;
 
-        yield return new WaitForSeconds(2f);
+        yield return new WaitForSeconds(1f);
 
         GameObject missile = Instantiate(missilePrefab, firePoint.position, firePoint.rotation);
         Rigidbody missileRb = missile.GetComponent<Rigidbody>();
@@ -190,6 +200,7 @@ public class BossEnemy : MonoBehaviour
     // 메테오 스톰 공격 (다른 공격과 독립적으로 실행됨)
     IEnumerator AutoMeteorStorm()
     {
+
         while (true)
         {
             yield return new WaitForSeconds(10f); // 10초마다 실행
@@ -203,6 +214,8 @@ public class BossEnemy : MonoBehaviour
 
     IEnumerator MeteorStormAttack()
     {
+        _rigidbody.linearVelocity = Vector3.zero;
+
         canUseMeteor = false;  // 연속 사용 방지
         currentState = State.Attack_Meteor;
         _navMeshAgent.isStopped = true;

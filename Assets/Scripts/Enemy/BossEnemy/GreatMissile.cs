@@ -3,7 +3,11 @@ using System.Collections;
 
 public class GreatMissile : MonoBehaviour
 {
+    private ObjectPool pool; // 오브젝트 풀
+
     private Rigidbody rb;
+
+    public GameObject prefabBox;
     private bool isFall;
     private float gainPower;
     private float scaleValue;
@@ -15,12 +19,29 @@ public class GreatMissile : MonoBehaviour
     {
         rb = GetComponent<Rigidbody>();
 
-        //  미사일 속도를 랜덤 값으로 설정 (5 ~ 15)
-        speed = Random.Range(5f, 15f);
+        ////  미사일 속도를 랜덤 값으로 설정 (5 ~ 15)
+        //speed = Random.Range(5f, 15f);
 
-        //처음부터 중력의 영향을 받아 아래로 이동
-        rb.useGravity = true;
+        ////처음부터 중력의 영향을 받아 아래로 이동
+        //rb.useGravity = true;
+        //rb.linearVelocity = Vector3.down * speed;
+
+        //StartCoroutine(GainScaleTimer());
+        //StartCoroutine(GainScale());
+    }
+
+    public void Initialize(ObjectPool objectPool)
+    {
+        pool = objectPool;
+
+        // 미사일 초기화 (속도, 크기 리셋)
+        speed = Random.Range(5f, 15f);
+        transform.localScale = Vector3.one;
         rb.linearVelocity = Vector3.down * speed;
+        rb.angularVelocity = Vector3.zero;
+        isFall = false;
+        gainPower = 0;
+        scaleValue = 1f;
 
         StartCoroutine(GainScaleTimer());
         StartCoroutine(GainScale());
@@ -55,7 +76,9 @@ public class GreatMissile : MonoBehaviour
     {
         if (collision.gameObject.CompareTag("Floor"))
         {
-            Destroy(gameObject);
+            Instantiate(prefabBox, transform.position, Quaternion.identity);
+            pool.ReturnObject(gameObject);
+            // Destroy(gameObject);
         }
 
         if (collision.gameObject.CompareTag("Player"))
@@ -65,8 +88,8 @@ public class GreatMissile : MonoBehaviour
             {
                 _playerstate.TakeDamage(damage);
             }
-
-            Destroy(gameObject);
+            pool.ReturnObject(gameObject);
+            // Destroy(gameObject);
         }
     }
 }
