@@ -12,7 +12,7 @@ public class PlatformDestroy : MonoBehaviour
         {
             platforms.Add(child);
         }
-        Debug.Log("[PlatformDestroy] ÃÑ " + platforms.Count + "°³ÀÇ ÇÃ·§ÆûÀÌ °¨ÁöµÊ.");
+        // Debug.Log("[PlatformDestroy] ÃÑ " + platforms.Count + "°³ÀÇ ÇÃ·§ÆûÀÌ °¨ÁöµÊ.");
     }
 
     private void OnCollisionEnter(Collision other)

@@ -84,6 +84,11 @@ public class PlayerThrow : MonoBehaviour
     {
         if (grabbedObject != null)
         {
+            Box thrownBox = grabbedObject.GetComponent<Box>();
+            thrownBox.MarkAsThrown(); // isThrown = true로 설정
+
+
+
             Rigidbody rb = grabbedObject.GetComponent<Rigidbody>();
 
             grabbedObject.transform.SetParent(null); // 부모 해제

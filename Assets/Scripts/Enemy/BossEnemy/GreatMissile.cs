@@ -77,6 +77,7 @@ public class GreatMissile : MonoBehaviour
         if (collision.gameObject.CompareTag("Floor"))
         {
             Instantiate(prefabBox, transform.position, Quaternion.identity);
+            prefabBox.GetComponent<Box>().SetOriginal(false);
             pool.ReturnObject(gameObject);
             // Destroy(gameObject);
         }

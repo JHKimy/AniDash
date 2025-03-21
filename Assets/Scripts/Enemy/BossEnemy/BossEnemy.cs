@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.AI;
 using System.Collections;
-using UnityEngine.Playables;
 
 public class BossEnemy : MonoBehaviour
 {
@@ -9,26 +8,31 @@ public class BossEnemy : MonoBehaviour
     private NavMeshAgent _navMeshAgent;
     private Animator _animator;
 
-    public Transform _target; // 플레이어 타겟
+    public Transform _target;
     public PlayerState _playerState;
 
-    public GameObject missilePrefab;  // 미사일 프리팹
-    public MeteorStorm meteorStorm;   // 메테오 스톰 매니저
-    public Transform firePoint;       // 미사일 발사 위치
+    public GameObject missilePrefab;
+    public GameObject keyPrefab;
+    public MeteorStorm meteorStorm;
+    public Transform firePoint;
 
-    private float attackCooldown = 3f;   // 공격 쿨타임
-    private float punchAttackRange = 5f; // 펀치 공격 범위
-    private float missileRange = 15f;    // 미사일 공격 범위
-    private float chaseRange = 30f;      // 추적 범위
+    private BossHealth _bossHealth;
 
-    private float health = 30f;
+    private float attackCooldown = 3f;
+    private float punchAttackRange = 5f;
+    private float missileRange = 15f;
+    private float chaseRange = 30f;
+
     private float maxHealth = 100f;
-    private bool canAttack = true;
-    private bool canUseMeteor = true;  // 메테오 사용 가능 여부
+    private float health = 30f;
 
     private float distanceToPlayer;
     private Vector3 lookVec;
 
+    private bool canAttack = true;
+    private bool canUseMeteor = true;
+    private bool isDead = false;
+    private bool isThinking = false;
     private bool isLook = true;
 
     public enum State
@@ -39,7 +43,7 @@ public class BossEnemy : MonoBehaviour
         Attack_Missile,
         Attack_Meteor,
         Hit,
-        KnockDown
+        Die
     }
 
     public State currentState = State.Idle;
@@ -49,24 +53,30 @@ public class BossEnemy : MonoBehaviour
         _rigidbody = GetComponent<Rigidbody>();
         _navMeshAgent = GetComponent<NavMeshAgent>();
         _animator = GetComponent<Animator>();
+        _bossHealth = GetComponent<BossHealth>();
     }
 
     void Start()
     {
-        StartCoroutine(AutoMeteorStorm()); // 10초마다 메테오 실행
+        StartCoroutine(AutoMeteorStorm());
     }
 
     void Update()
     {
+        if (isDead) return;
+
         distanceToPlayer = Vector3.Distance(transform.position, _playerState.transform.position);
 
         if (isLook)
         {
-            lookVec = new Vector3(_playerState.hAxis, 0, _playerState.vAxis) * 1f;
+            lookVec = new Vector3(_playerState.hAxis, 0, _playerState.vAxis);
             transform.LookAt(_target.position + lookVec);
         }
 
-        StartCoroutine(Think()); // 일정 시간마다 행동 결정
+        if (!isThinking)
+        {
+            StartCoroutine(Think());
+        }
 
         switch (currentState)
         {
@@ -76,16 +86,6 @@ public class BossEnemy : MonoBehaviour
             case State.Chase:
                 Chase();
                 break;
-            case State.Attack_Punch:
-                break;
-            case State.Attack_Missile:
-                break;
-            case State.Attack_Meteor:
-                break; // 코루틴에서 처리
-            case State.Hit:
-                break;
-            case State.KnockDown:
-                break;
         }
 
         SetAnimation();
@@ -93,7 +93,9 @@ public class BossEnemy : MonoBehaviour
 
     IEnumerator Think()
     {
-        while (true)
+        isThinking = true;
+
+        while (!isDead)
         {
             yield return new WaitForSeconds(0.5f);
 
@@ -102,21 +104,23 @@ public class BossEnemy : MonoBehaviour
                 DecideNextAction();
             }
         }
+
+        isThinking = false;
     }
 
     void DecideNextAction()
     {
-        if (distanceToPlayer > punchAttackRange && distanceToPlayer <= missileRange && canAttack) // 미사일 공격
-        {
-            StartCoroutine(LaunchMissile());
+        if (isDead || !canAttack) return;
 
-        }
-        else if (distanceToPlayer <= punchAttackRange && canAttack) // 펀치 공격
+        if (distanceToPlayer <= punchAttackRange)
         {
             StartCoroutine(PunchAttack());
-
         }
-        else if (distanceToPlayer <= chaseRange) // 추적
+        else if (distanceToPlayer <= missileRange)
+        {
+            StartCoroutine(LaunchMissile());
+        }
+        else if (distanceToPlayer <= chaseRange)
         {
             currentState = State.Chase;
         }
@@ -126,7 +130,6 @@ public class BossEnemy : MonoBehaviour
     {
         _navMeshAgent.isStopped = true;
         _rigidbody.linearVelocity = Vector3.zero;
-
 
         if (distanceToPlayer <= chaseRange)
         {
@@ -144,21 +147,17 @@ public class BossEnemy : MonoBehaviour
 
         _navMeshAgent.isStopped = false;
         _navMeshAgent.SetDestination(_playerState.transform.position);
-
-        if (distanceToPlayer <= punchAttackRange) // 공격 가능하면 공격
-        {
-            StartCoroutine(PunchAttack());
-        }
     }
 
-    // 펀치 공격
     IEnumerator PunchAttack()
     {
+        if (isDead) yield break;
+
         canAttack = false;
         currentState = State.Attack_Punch;
         _navMeshAgent.isStopped = true;
-        _animator.SetTrigger("doAttack");
         _rigidbody.linearVelocity = Vector3.zero;
+        _animator.SetTrigger("doAttack");
 
         yield return new WaitForSeconds(1f);
 
@@ -172,14 +171,15 @@ public class BossEnemy : MonoBehaviour
         currentState = State.Idle;
     }
 
-    // 미사일 공격
     IEnumerator LaunchMissile()
     {
+        if (isDead) yield break;
+
         canAttack = false;
         currentState = State.Attack_Missile;
         _navMeshAgent.isStopped = true;
-        _animator.SetTrigger("doMissile");
         _rigidbody.linearVelocity = Vector3.zero;
+        _animator.SetTrigger("doMissile");
 
         yield return new WaitForSeconds(1f);
 
@@ -197,13 +197,11 @@ public class BossEnemy : MonoBehaviour
         currentState = State.Idle;
     }
 
-    // 메테오 스톰 공격 (다른 공격과 독립적으로 실행됨)
     IEnumerator AutoMeteorStorm()
     {
-
-        while (true)
+        while (!isDead)
         {
-            yield return new WaitForSeconds(10f); // 10초마다 실행
+            yield return new WaitForSeconds(10f);
 
             if (health <= maxHealth * 0.5f && canUseMeteor)
             {
@@ -214,30 +212,73 @@ public class BossEnemy : MonoBehaviour
 
     IEnumerator MeteorStormAttack()
     {
-        _rigidbody.linearVelocity = Vector3.zero;
+        if (isDead) yield break;
 
-        canUseMeteor = false;  // 연속 사용 방지
+        _rigidbody.linearVelocity = Vector3.zero;
+        canUseMeteor = false;
         currentState = State.Attack_Meteor;
         _navMeshAgent.isStopped = true;
         _animator.SetTrigger("doMeteorStorm");
 
         yield return new WaitForSeconds(1f);
 
-        if (meteorStorm != null)
-        {
-            meteorStorm.StartStorm();
-        }
+        meteorStorm?.StartStorm();
 
         yield return new WaitForSeconds(3f);
-        meteorStorm.StopStorm();
+        meteorStorm?.StopStorm();
 
-        yield return new WaitForSeconds(5f); // 5초 후 다시 사용 가능
+        yield return new WaitForSeconds(5f);
         canUseMeteor = true;
-        // currentState = State.Idle;
+    }
+
+    public IEnumerator Die()
+    {
+        if (isDead) yield break;
+        isDead = true;
+        currentState = State.Die;
+
+        _animator.SetTrigger("doDie");
+        _navMeshAgent.isStopped = true;
+        _rigidbody.linearVelocity = Vector3.zero;
+
+        yield return new WaitForSeconds(5f);
+
+        for (int i = 0; i < 10; i++)
+        {
+            Vector3 spawnPos = transform.position + Vector3.up * 2f;
+            Vector3 realSpawnPos = spawnPos + Random.insideUnitSphere * 2f;
+
+            GameObject key = Instantiate(keyPrefab, realSpawnPos, Quaternion.identity);
+            Rigidbody rb = key.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                Vector3 randomDir = Random.onUnitSphere;
+                rb.AddForce(randomDir * 10f, ForceMode.Impulse);
+            }
+        }
+
+        Destroy(gameObject);
+    }
+
+    void OnCollisionEnter(Collision other)
+    {
+        if (isDead) return;
+
+        if (other.gameObject.CompareTag("Box"))
+        {
+            Box thrownBox = other.gameObject.GetComponent<Box>();
+            if (thrownBox != null && thrownBox.isThrown)
+            {
+                currentState = State.Hit;
+                _bossHealth.TakeDamage(50f);
+                thrownBox.isThrown = false;
+            }
+        }
     }
 
     void SetAnimation()
     {
+        if (isDead) return;
         _animator.SetBool("isWalk", currentState == State.Chase);
     }
 }
