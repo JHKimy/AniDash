@@ -41,7 +41,7 @@ public class Sector1Platform : MonoBehaviour, PlayerState.PlayerObserver
 
     public void OnPlayerStateChanged(PlayerState playerState)
     {
-        if (playerState.key >= 5)
+        if (playerState.key >= 7)
         {
             canMove = true; // 키 5개 이상이면 이동 시작
         }

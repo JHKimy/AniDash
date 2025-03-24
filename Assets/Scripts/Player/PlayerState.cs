@@ -36,10 +36,11 @@ public class PlayerState : MonoBehaviour
     public float maxStamina = 100;
 
     public int key = 99;
+    public bool isContectEndPos = false;
 
 
     public Transform[] respawnPoints; // 총 4개의 리스폰 포인트
-    private bool isDead = false;
+    public bool isDead = false;
 
 
 
@@ -212,7 +213,7 @@ public class PlayerState : MonoBehaviour
             SetStamina(stamina + 5f * Time.deltaTime);
         }
 
-        Debug.Log("sdfffffffffffffffffffffffssssssssssssssssssss" + currentState);
+        Debug.Log(currentState);
 
     }
 
@@ -257,6 +258,11 @@ public class PlayerState : MonoBehaviour
     void OnCollisionEnter(Collision collision)
     {
         isGrounded = true;
+
+        if (collision.gameObject.CompareTag("EndPos"))
+        {
+            isContectEndPos = true;
+        }
 
         //if (collision.gameObject.tag == "Key") // 수정된 부분
         //{
@@ -336,7 +342,6 @@ public class PlayerState : MonoBehaviour
         if (isDead) return;
         isDead = true;
 
-        Debug.Log("플레이어 사망. 리스폰 준비 중...");
         
         currentState = State.Die;
 
@@ -371,7 +376,6 @@ public class PlayerState : MonoBehaviour
 
         isDead = false;
 
-        Debug.Log("리스폰 완료.");
     }
 
     Transform GetNearestRespawnPoint()

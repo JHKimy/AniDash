@@ -12,34 +12,34 @@ public class PlatformDrop : MonoBehaviour
 
     void Start()
     {
-        Debug.Log("Start 실행됨"); // Start() 실행 확인
+        //Debug.Log("Start 실행됨"); // Start() 실행 확인
         InitializeDropPool();
         StartCoroutine(SpawnDropObjects());
     }
 
     void InitializeDropPool()
     {
-        Debug.Log($"Initializing pool with size: {poolSize}"); // poolSize 값 확인
+        //Debug.Log($"Initializing pool with size: {poolSize}"); // poolSize 값 확인
 
         for (int i = 0; i < poolSize; i++)
         {
-            Debug.Log($"Creating drop object {i + 1}"); // 몇 개 생성되는지 확인
+            //Debug.Log($"Creating drop object {i + 1}"); // 몇 개 생성되는지 확인
 
             DropObject tempDropObject = Instantiate(dropPrefab); // GameObject로 생성
 
             if (tempDropObject == null)
             {
-                Debug.LogError($"DropObject 컴포넌트가 {dropPrefab.name}에 없음!");
+                //Debug.LogError($"DropObject 컴포넌트가 {dropPrefab.name}에 없음!");
                 return;
             }
 
             tempDropObject.SetPool(this);
             tempDropObject.gameObject.SetActive(false);
             dropPool.Enqueue(tempDropObject);
-            Debug.Log("put"); // put 로그가 출력됨
+            //Debug.Log("put"); // put 로그가 출력됨
         }
 
-        Debug.Log($"Pool initialized with {dropPool.Count} objects"); // 풀 크기 확인
+        //Debug.Log($"Pool initialized with {dropPool.Count} objects"); // 풀 크기 확인
     }
 
     IEnumerator SpawnDropObjects()
@@ -73,7 +73,7 @@ public class PlatformDrop : MonoBehaviour
             dropPool.Enqueue(dropOBJ);
         }
 
-        Debug.Log("All objects in pool are active, creating a new one."); // 새로 생성 시 로그 출력
+        //Debug.Log("All objects in pool are active, creating a new one."); // 새로 생성 시 로그 출력
         DropObject newDrop = Instantiate(dropPrefab); // GameObject로 생성
         newDrop.SetPool(this);
         return newDrop;

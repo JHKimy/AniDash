@@ -10,7 +10,7 @@ public class Enemy2 : MonoBehaviour
 
     // public float fireRate = 3f;
     public float laserSpeed = 70f;
-    private float laserLifeTime = 5f;
+    private float laserLifeTime = 3f;
 
     private float nextFireTime = 0f;
     private Queue<Laser> laserPool = new Queue<Laser>();

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 public class RandomPlatforms : MonoBehaviour
 {
     public float speed = 2.0f;  // 이동 속도
-    public float moveRange = 5.0f; // 이동 범위 (X, Z)
+    public float moveRange = 3.0f; // 이동 범위 (X, Z)
 
     private List<Transform> platforms = new List<Transform>(); // 발판 리스트
     private Dictionary<Transform, Vector3> targetPositions = new Dictionary<Transform, Vector3>(); // 발판별 목표 위치
@@ -70,4 +70,25 @@ public class RandomPlatforms : MonoBehaviour
 
         targetPositions[platform] = newTarget;
     }
+
+    //void OnCollisionEnter(Collision collision)
+    //{
+    //    if (collision.gameObject.CompareTag("Player"))
+    //    {
+    //        // 충돌한 플랫폼의 Transform을 구한다
+    //        Transform platform = collision.contacts[0].thisCollider.transform;
+
+    //        // 플레이어를 그 플랫폼의 자식으로 설정
+    //        collision.transform.parent = platform;
+    //    }
+    //}
+
+    //void OnCollisionExit(Collision collision)
+    //{
+    //    if (collision.gameObject.CompareTag("Player"))
+    //    {
+    //        collision.transform.parent = null;
+    //    }
+    //}
+
 }

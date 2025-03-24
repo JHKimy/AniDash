@@ -5,6 +5,7 @@ using Unity.Collections;
 using UnityEngine.Rendering.HighDefinition;
 using TMPro;
 using UnityEngine.SceneManagement;
+using Unity.VisualScripting;
 
 public class GameManager : MonoBehaviour, PlayerState.PlayerObserver
 {
@@ -26,6 +27,7 @@ public class GameManager : MonoBehaviour, PlayerState.PlayerObserver
     public Text playerKeyTxt;
 
     public Button restartButton;
+    private bool isGameEnd = false;
 
 
     private void Awake()
@@ -51,11 +53,15 @@ public class GameManager : MonoBehaviour, PlayerState.PlayerObserver
             playTime += Time.deltaTime;
         }
 
-        // G 키로 테스트 클리어
-        if (Input.GetKeyDown(KeyCode.G))
-        {
-            GameClear();
-        }
+        //// G 키로 테스트 클리어
+        //if (Input.GetKeyDown(KeyCode.G))
+        //{
+        //    GameClear();
+        //}
+        //if(isGameEnd)
+        //{
+
+        //}
     }
 
     void LateUpdate()
@@ -93,6 +99,9 @@ public class GameManager : MonoBehaviour, PlayerState.PlayerObserver
 
     void GameClear()
     {
+        // Debug.Log("djflsjdfjlseijknclvxkl");
+
+
         isBattle = false;
         gamePanel.SetActive(false);
         clearPanel.SetActive(true);
@@ -143,5 +152,9 @@ public class GameManager : MonoBehaviour, PlayerState.PlayerObserver
         playerHealthBar.localScale = new Vector3(playerState.health / playerState.maxHealth, 1, 1);
         playerStaminaBar.localScale = new Vector3(playerState.stamina / playerState.maxStamina, 1, 1);
         playerKeyTxt.text = string.Format("{0:n0}", playerState.key);
+        if (playerState.key >= 20 && playerState.isContectEndPos)
+        {
+            GameClear();
+        }
     }
 }

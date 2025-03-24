@@ -41,8 +41,6 @@ public class PlatformRotate : MonoBehaviour, PlayerState.PlayerObserver
 
             if (distance < 10f) // 5m 이내 감지
             {
-                Debug.Log("djflsjflk");
-
                 if (!playerNearby)
                 {
                     playerNearby = true;
