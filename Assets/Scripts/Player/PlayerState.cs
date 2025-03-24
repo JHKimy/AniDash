@@ -152,7 +152,6 @@ public class PlayerState : MonoBehaviour
         _rigidbody = target.GetComponent<Rigidbody>();
         _animator = GetComponent<Animator>();
         previousPosition = transform.position;
-
     }
 
     void FixedUpdate()
@@ -165,9 +164,6 @@ public class PlayerState : MonoBehaviour
 
 
 
-
-
-
         //== 흔들림 버그 강제 수정
         if (speed <= 0.5f && isGrounded)
         {
@@ -175,11 +171,6 @@ public class PlayerState : MonoBehaviour
             _rigidbody.angularVelocity = Vector3.zero;
         }
         //==
-
-
-
-
-
 
 
 
@@ -303,7 +294,7 @@ public class PlayerState : MonoBehaviour
         _animator.SetBool("isSliding", currentState == PlayerState.State.Sliding);
         _animator.SetBool("isRunning", currentState == PlayerState.State.Running);
         _animator.SetBool("isClimbing", currentState == PlayerState.State.Climbing);
-        if (currentState == State.Climbing) _animator.SetFloat("climbInput", vAxis);
+        if (currentState == State.Climbing){ _animator.SetFloat("climbInput", vAxis);}
         _animator.SetBool("isFalling", currentState == State.Falling);
         _animator.SetBool("isAccelFalling", currentState == State.AccelFalling);
         _animator.SetBool("isFallingImpact", currentState == State.FallingImpact);
@@ -311,11 +302,11 @@ public class PlayerState : MonoBehaviour
 
         if (secondaryState == SecondaryState.HoldingObject)
         {
-            _animator.SetLayerWeight(1, 1); // Uppe_rigidbodyody 레이어 가중치 1로 설정
+            _animator.SetLayerWeight(1, 1); // 박스 홀딩 레이어 가중치 1로 설정
         }
         if (secondaryState == SecondaryState.None)
         {
-            _animator.SetLayerWeight(1, 0); // Uppe_rigidbodyody 레이어 가중치 1로 설정
+            _animator.SetLayerWeight(1, 0); // 박스 홀딩 레이어 레이어 가중치 0으로 설정
         }
     }
 

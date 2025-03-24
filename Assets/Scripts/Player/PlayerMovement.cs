@@ -37,7 +37,7 @@ public class PlayerMovement : MonoBehaviour
 
     private float fallStartTime = 0f;  // 떨어지기 시작한 시간
     private float fallThreshold = 0.1f;  // 1초 이상 떨어졌을 때만 isFalling 활성화
-    private float accelFallThreshold = 3.5f;  // 3초 이상 떨어졌을 때 isAccelFalling 활성화ㄴ
+    private float accelFallThreshold = 3.5f; // 3초 이상 떨어졌을 때 isAccelFalling 활성화ㄴ
 
 
 
@@ -139,14 +139,12 @@ public class PlayerMovement : MonoBehaviour
 
         if (_playerState.keyJump)
         {
-
             _rigidbody.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
             _animator.SetTrigger("doJump");
 
             _playerState.SetState(PlayerState.State.Jumping);
             _playerState.isGrounded = false;
             // _animator.SetBool("isJumping", true);
-
         }
     }
 
